@@ -249,6 +249,7 @@ function invHist(){
 
 /* ---------- BULAN BERJALAN ---------- */
 function monthStart(){
+ S.com.forEach(c=>{if(c.active!==false&&c.until&&S.m>=c.until){S.exAdj-=c.d;c.active=false}});
  const y=Math.floor(S.m/12),fi=Math.pow(1.05,y);
  const inc=C.gaji*fi*S.gajiMul,side=C.side*fi*S.sideMul*S.scn[S.m].u,base=expBase(),exp=expNow(),prem=S.ins?Math.round(C.exp*0.03):0;
  let intr=0;for(const k in RATE){const i=S.debt[k]*rateOf(k,S.m,S.kSince);S.debt[k]+=i;intr+=i}
@@ -291,6 +292,10 @@ const OFFERS=[
  {id:'murah',once:1,grp:'rumah',make:(e)=>{return{t:'Pindah ke kontrakan lebih murah di pinggiran',desc:'Sewa lebih murah, tapi perjalanan ke tempat kerja lebih jauh.',up:r5(e*0.3),parts:[['Sewa kontrakan turun',-r5(e*0.10)],['Ongkos perjalanan naik',r5(e*0.04)]]}}},
  {id:'dekat',once:1,grp:'rumah',make:(e)=>{return{t:'Pindah ke dekat tempat kerja',desc:'Sewa naik, tapi ongkos perjalanan turun dan waktumu lebih longgar untuk side job.',up:r5(e*0.25),parts:[['Sewa kontrakan naik',r5(e*0.08)],['Ongkos perjalanan turun',-r5(e*0.05)]],sideMul:1.1,note:'Side job naik sekitar 10%.'}}},
  {id:'bundle',once:1,make:(e)=>{return{t:'Paket bundling hemat (internet, TV, ponsel)',desc:'Gabungkan langganan jadi satu paket yang lebih murah.',up:0,parts:[['Tagihan langganan turun',-r5(e*0.03)]]}}},
+ {id:'tagihan',once:1,min:3,make:(e)=>({t:'Bayar tagihan rutin setahun di awal',desc:'Bayar sebagian tagihan rutin di muka untuk mendapat potongan selama 12 bulan.',up:r5(e*0.25),parts:[['Penghematan tagihan selama 12 bulan',-r5(e*0.03)]],duration:12,note:'Penghematan berlaku selama 12 bulan.'})},
+ {id:'transum',once:1,make:(e)=>({t:'Beralih ke transportasi umum',desc:'Gunakan transportasi umum untuk perjalanan harian. Biaya perjalanan turun, tetapi perjalanan terasa lebih melelahkan.',up:r5(e*0.10),parts:[['Biaya transportasi turun',-r5(e*0.04)]],stress:10,note:'Tingkat stres naik 10 poin saat tawaran diterima.'})},
+ {id:'gadget',once:1,min:4,make:(e)=>({t:'Membeli gadget terbaru',desc:'Gadget baru membuat aktivitas harian terasa lebih nyaman, tetapi menguras kas.',up:r5(e*0.80),parts:[],stress:-10,note:'Tingkat stres turun 10 poin saat tawaran diterima.'})},
+ {id:'pulsa',once:1,min:3,make:(e)=>({t:'Paket pulsa setahun dibayar di awal',desc:'Bayar paket pulsa untuk setahun sekaligus dengan biaya bulanan yang lebih hemat.',up:r5(e*0.12),parts:[['Penghematan paket pulsa selama 12 bulan',-r5(e*0.015)]],duration:12,note:'Penghematan berlaku selama 12 bulan.'})},
  {id:'gaya',make:(e)=>{return{t:'Naik gaya hidup: makan di luar dan hiburan rutin',desc:'Tidak ada keuntungan finansial, tapi bisa meredakan stres.',up:0,parts:[['Makan di luar dan hiburan',r5(e*0.06)]],stress:-20,note:'Tingkat stresmu turun 20 poin sekarang, dan stres jangka panjangmu ikut lebih rendah selama komitmen ini berjalan. Harganya: pengeluaran rutin naik setiap bulan.'}}},
  {id:'kursus',once:1,min:3,make:()=>({t:'Kursus sertifikasi keahlian',desc:'Biaya pendidikan sekali bayar untuk meningkatkan penghasilan pokok.',up:r5(C.gaji*0.4),parts:[],chance:0.75,gajiMul:1.10,note:'Peluang lulus 75%. Jika lulus, gaji pokok naik 10% mulai bulan depan. Jika gagal, biaya hangus.'})}
 ];
@@ -310,7 +315,7 @@ function offerHTML(o){
   const fi=Math.pow(1.05,Math.floor(S.m/12)),after=C.gaji*fi*S.gajiMul+C.side*fi*S.sideMul*(o.sideMul||1)*0.8-(expNow()+d)-(S.ins?C.exp*0.03:0),ok=[];
   ok.push('Perkiraan arus kas rutin setelah tawaran: <b>'+fmt(after)+'</b> per bulan.');
   if(after<0)ok.push('Kamu akan defisit tiap bulan. Sebaiknya tolak.');
-  if(o.stress)ok.push('Stresmu sekarang '+Math.round(S.stress)+' dari 100. Tawaran ini menurunkannya, tapi hanya sepadan jika arus kas dan dana daruratmu aman.');
+  if(o.stress)ok.push('Tingkat stresmu sekarang '+Math.round(S.stress)+' dari 100. Tawaran ini '+(o.stress<0?'menurunkan':'menaikkan')+' stres '+Math.abs(o.stress)+' poin.');
   if(o.up>S.cash)ok.push('Kas belum cukup untuk biaya awal.');
   if(S.ef<expNow()*3)ok.push('Dana darurat belum 3 bulan. Sebaiknya penuhi dulu.');
   adv='<div class="msg" style="margin-top:12px">Panduan: '+ok.join(' ')+'</div>';
@@ -318,17 +323,17 @@ function offerHTML(o){
  return `<div class="alert" style="border-left-color:var(--acc)"><span class="tag" style="background:var(--acc);color:var(--acc-ink)">Tawaran baru</span><h3 style="margin-top:8px">${o.t}</h3><p class="muted sm" style="margin:4px 0 8px">${o.desc}</p>
  <ul class="ledger">${o.parts.map(p=>`<li><span>${p[0]}</span><span class="${p[1]>0?'neg':'pos'}">${sg(p[1])}</span></li>`).join('')}
  ${o.parts.length?`<li><b>Perubahan pengeluaran per bulan</b><b class="${d>0?'neg':'pos'}">${sg(d)}</b></li>`:''}
- <li><span>Biaya awal (dari kas)</span><span class="${o.up?'neg':''}">${fmt(o.up)}</span></li>${o.stress?`<li><span>Efek tingkat stres</span><span class="pos">−${Math.abs(o.stress)} poin</span></li>`:''}${o.eq?`<li><span>Ekuitas rumah bertambah per bulan</span><span class="pos">+${fmt(o.eq)}</span></li>`:''}</ul>
+ <li><span>Biaya awal (dari kas)</span><span class="${o.up?'neg':''}">${fmt(o.up)}</span></li>${o.stress?`<li><span>Efek tingkat stres</span><span class="${o.stress<0?'pos':'neg'}">${o.stress<0?'turun':'naik'} ${Math.abs(o.stress)} poin</span></li>`:''}${o.duration?`<li><span>Lama penghematan</span><span>${o.duration} bulan</span></li>`:''}${o.eq?`<li><span>Ekuitas rumah bertambah per bulan</span><span class="pos">+${fmt(o.eq)}</span></li>`:''}</ul>
  ${o.note?`<p class="sm muted" style="margin-top:8px">${o.note}</p>`:''}${adv}
  <div class="row"><button class="btn pri" data-act="offyes">Terima</button><button class="btn" data-act="offno">Tolak</button></div>
  <p class="sm muted" style="margin-top:8px">Tawaran hanya berlaku sampai akhir bulan ini.</p></div>`;
 }
 function commitHTML(){
- return `<h3 style="margin-top:18px">Komitmen aktif</h3>`+(S.com.length?`<ul class="ledger">${S.com.map(c=>`<li><span>${c.t}</span><span class="${c.d>0?'neg':'pos'}">${c.d?(c.d>0?'+':'')+fmt(c.d)+' per bulan':'sekali bayar'}</span></li>`).join('')}</ul>`:'<p class="sm muted">Belum ada.</p>')+(S.prop>0?`<p class="sm" style="margin-top:8px">Ekuitas rumah: <b>${fmt(S.prop)}</b> (ikut dihitung sebagai aset bersih)</p>`:'');
+ return `<h3 style="margin-top:18px">Komitmen aktif</h3>`+(S.com.some(c=>c.active!==false)?`<ul class="ledger">${S.com.filter(c=>c.active!==false).map(c=>`<li><span>${c.t}</span><span class="${c.d>0?'neg':'pos'}">${c.d?(c.d>0?'+':'')+fmt(c.d)+' per bulan':'sekali bayar'}${c.until?' ('+(c.until-S.m-1)+' bulan tersisa)':''}</span></li>`).join('')}</ul>`:'<p class="sm muted">Belum ada.</p>')+(S.prop>0?`<p class="sm" style="margin-top:8px">Ekuitas rumah: <b>${fmt(S.prop)}</b> (ikut dihitung sebagai aset bersih)</p>`:'');
 }
 function offerValue(o,m=S.m){
  const rem=Math.max(0,C.thn*12-m-1),d=dSum(o),fi=Math.pow(1.05,Math.floor(m/12));
- let v=-d*rem;
+ const months=o.duration?Math.min(rem,o.duration):rem;let v=-d*months;
  if(o.id=='kpr')v+=o.eq*rem+0.004*(o.up+o.eq*rem/2)*rem;else v-=o.up;
  if(o.sideMul)v+=C.side*fi*0.8*(o.sideMul-1)*rem;
  if(o.chance!=null)v+=o.chance*C.gaji*fi*(o.gajiMul-1)*rem;
@@ -343,8 +348,8 @@ function takeOffer(){
  if(o.sideMul)S.sideMul*=o.sideMul;
  if(o.chance!=null){if(lulus=S.scn[S.m].oL<o.chance){S.gajiMul*=o.gajiMul;m+=' Lulus! Gaji pokok naik 10% mulai bulan depan.'}else m+=' Belum lulus, biaya hangus.'}
  S.offLog.push({m:S.m,id:o.id,t:o.t,res:'terima',d,up:o.up,val,cov:cov0,cash:cashAfter,e:e0,lulus,st:S.stress});
- S.com.push({id:o.id,grp:o.grp,t:o.t,d});S.offer=null;
- if(o.stress){S.stress=clamp(S.stress+o.stress,0,100);S.cur.stD.push('tawaran gaya hidup diterima ('+o.stress+')');m+=' Stresmu turun '+Math.abs(o.stress)+' poin.'}
+ S.com.push({id:o.id,grp:o.grp,t:o.t,d,until:o.duration?S.m+o.duration+1:null,active:true});S.offer=null;
+ if(o.stress){S.stress=clamp(S.stress+o.stress,0,100);(o.stress<0?S.cur.stD:S.cur.stU).push(o.t+' ('+(o.stress>0?'+':'')+o.stress+')');m+=' Tingkat stres '+(o.stress<0?'turun ':'naik ')+Math.abs(o.stress)+' poin.'}
  S.cur.dec.push(m+' Biaya awal '+fmt(o.up)+(d?', perubahan pengeluaran '+(d>0?'+':'')+fmt(d)+' per bulan':'')+'.');
  S.msg=m;dash();render();
 }
@@ -555,6 +560,7 @@ function simulate(P){
   r-=t}
   if(r>=1){x.debt.pinjol+=r*1.1;st.adm+=r*0.1;st.pinjol++;bm=true}};
  for(let m=0;m<T;m++){
+  x.com.forEach(c=>{if(c.active!==false&&c.until&&m>=c.until){x.exAdj-=c.d;c.active=false}});
   const sc=S.scn[m],fi=Math.pow(1.05,Math.floor(m/12));bm=false;cm=m;
   const inc=C.gaji*fi*x.gajiMul,side=C.side*fi*x.sideMul*sc.u,prem=x.ins?Math.round(C.exp*0.03):0;
   for(const k in RATE){const i=x.debt[k]*rateOf(k,m,x.kSince);x.debt[k]+=i;st.intr+=i}
@@ -567,7 +573,7 @@ function simulate(P){
   const o=drawOffer(m,x.com,x.last);
   if(o&&P.offer=='smart'&&o.up<=x.cash&&x.cash-o.up>=exN(m)*P.buf&&x.ef>=exN(m)*3&&offerValue(o,m)>0){
    x.cash-=o.up;x.exAdj+=dSum(o);if(o.id=='kpr'){x.prop+=o.up;x.eqM+=o.eq}if(o.sideMul)x.sideMul*=o.sideMul;
-   if(o.chance!=null&&sc.oL<o.chance)x.gajiMul*=o.gajiMul;x.com.push({id:o.id,grp:o.grp});st.acc.push({m,t:o.t});
+   if(o.chance!=null&&sc.oL<o.chance)x.gajiMul*=o.gajiMul;x.com.push({id:o.id,grp:o.grp,d:dSum(o),until:o.duration?m+o.duration+1:null,active:true});st.acc.push({m,t:o.t});
   }
   const E=exN(m),buf=E*P.buf,free=()=>Math.max(0,x.cash-buf);
   if(P.pay)for(const k of ['pinjol','kartu']){const p=Math.min(free(),x.debt[k]);x.cash-=p;x.debt[k]-=p}

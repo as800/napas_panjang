@@ -6,11 +6,9 @@
 <title>Napas Panjang – Game Ketahanan Finansial</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#e9efee;--ink:#14233a;--muted:#5a6a7c;--card:#fbfdfc;--line:#c9d6d3;--acc:#f2b705;--acc-ink:#14233a;--good:#1b7f54;--bad:#c2402d;--soft:#dde7e5;
+:root{--bg:#ffffff;--ink:#14233a;--muted:#5a6878;--card:#ffffff;--line:#d7dde5;--acc:#f2b705;--acc-ink:#14233a;--good:#315d8a;--bad:#c2402d;--soft:#f1f3f6;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1823;--ink:#e7eef4;--muted:#93a4b5;--card:#16242f;--line:#2a3b49;--acc:#f2b705;--acc-ink:#14233a;--good:#46c58b;--bad:#ff7a66;--soft:#1f313e;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0e1823;--ink:#e7eef4;--muted:#93a4b5;--card:#16242f;--line:#2a3b49;--acc:#f2b705;--acc-ink:#14233a;--good:#46c58b;--bad:#ff7a66;--soft:#1f313e;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "DM Sans",system-ui,sans-serif}
 .wrap{max-width:1200px;margin:0 auto;padding:20px 24px 48px}
@@ -57,6 +55,7 @@ input[type=number],input.num{width:100%;margin-top:6px;padding:10px 12px;font:50
 .tag.r{color:var(--bad)}.tag.g{color:var(--good)}
 .alert{border-left:6px solid var(--bad);background:var(--card);border-radius:12px;padding:16px;border-top:1.5px solid var(--line);border-right:1.5px solid var(--line);border-bottom:1.5px solid var(--line)}
 .alert .amt{font:800 30px "Bricolage Grotesque",sans-serif;color:var(--bad)}
+.alert.has-art{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:16px;align-items:center}.alert-art{width:150px;height:130px;display:grid;place-items:center;color:#30435d}.alert-art img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px}.alert-art svg{width:110px;height:110px}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-top:12px}
 .row>*{flex:1 1 170px}
 .mini{display:flex;gap:6px;margin-top:6px}.mini button{font:600 12px "DM Sans";padding:4px 8px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;cursor:pointer}
@@ -86,6 +85,7 @@ th:first-child,td:first-child{text-align:left}
 .msg{background:var(--soft);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-weight:500}
 .foot{position:sticky;bottom:0;background:var(--bg);padding:12px 0 8px;margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .foot .btn{flex:1 1 220px}.foot p{flex:2 1 200px}
+.storyboard-play .foot{position:static;background:transparent;border-top:1px solid var(--line);padding:12px 0 0;margin-top:14px}
 .big2{font:800 34px "Bricolage Grotesque",sans-serif;letter-spacing:-.02em}
 .hide{display:none}
 .tab.new{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc);animation:pulse 1.8s ease-in-out infinite}
@@ -109,14 +109,88 @@ summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
 .sbar{height:10px;background:var(--soft);border-radius:99px;overflow:hidden;margin-top:8px}.sbar i{display:block;height:100%;border-radius:99px;transition:width .4s}
 .spark{width:96px;height:28px;vertical-align:middle}
+.game-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start;margin-top:12px}
+.game-main{min-width:0;order:1}.game-aside{position:sticky;top:12px;order:2}
+.scene-card{display:grid;grid-template-columns:minmax(155px,220px) minmax(0,1fr);gap:18px;align-items:center;overflow:hidden;background:linear-gradient(135deg,#ffffff,#f7f8fa);border:1.5px solid var(--line);border-radius:18px;padding:14px 18px;margin-bottom:14px;color:#14233a}
+.scene-figure{width:100%;height:210px;display:block}.scene-copy .eyebrow{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#5a6878}.scene-copy h2{margin:5px 0 8px}.scene-copy p{font-size:14px;line-height:1.5;color:#49566a}
+.scene-context{display:inline-flex;align-items:center;gap:7px;margin-top:10px;padding:6px 10px;border-radius:99px;background:rgba(255,255,255,.72);font-size:12px;font-weight:700;color:#30435d}.scene-context svg{width:20px;height:20px}
+.game-aside .nw{padding:16px}.game-aside .nw .big{font-size:32px;overflow-wrap:anywhere}.side-title{font:700 15px "Bricolage Grotesque",sans-serif;margin:14px 0 6px}.side-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.side-metric{background:var(--soft);border-radius:10px;padding:9px}.side-metric span{display:block;color:var(--muted);font-size:12px}.side-metric b{font-size:14px;overflow-wrap:anywhere}.aside-ledger{font-size:13px}.aside-ledger li{gap:8px}.aside-ledger li span:last-child{text-align:right;font-weight:700}
+.stage{margin-top:0}
+@media(max-width:850px){.game-layout{grid-template-columns:1fr}.game-aside{position:static;order:0}.game-aside .nw{display:grid;grid-template-columns:1fr auto;align-items:center;gap:0 12px}.game-aside .nw .big{margin:2px 0;font-size:28px}.game-aside .bar,.game-aside .nw .lbl:last-child{grid-column:1/-1}.game-aside .stress{margin-top:8px}}
+@media(max-width:540px){.scene-card{grid-template-columns:105px 1fr;gap:10px;padding:10px 12px}.scene-figure{height:150px}.scene-copy h2{font-size:20px}.scene-copy p{font-size:13px}.side-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.side-metric{padding:7px 5px}.side-metric b{font-size:12px}}
+.game-layout{grid-template-columns:230px minmax(0,1fr);gap:18px;align-items:start;max-width:1500px;margin:16px auto 0}
+.character-rail{position:sticky;top:12px;min-width:0}.game-main{min-width:0;order:2}.game-aside{display:none}
+.character-card{display:block;position:relative;min-height:calc(100vh - 155px);padding:16px 12px 18px;border-radius:18px;border:1.5px solid #d7dde5;overflow:hidden;background:linear-gradient(180deg,#eef3f7 0%,#f4f5f7 48%,#dfe5eb 100%);box-shadow:0 10px 26px #14233a1a}
+.character-card>.scene-card{display:block;min-height:0;background:transparent;border:0;border-radius:0;padding:0;margin:0;box-shadow:none;color:#14233a}
+.character-card[data-env="city"]{background:linear-gradient(180deg,#e8f1f8 0%,#f1f3f6 52%,#d9e1e9 100%)}
+.character-card[data-env="home"]{background:linear-gradient(180deg,#edf2f6 0%,#f4f1eb 55%,#e3e5e8 100%)}
+.character-rail[data-env="city"] .character-card{background:linear-gradient(180deg,#e8f1f8 0%,#f1f3f6 52%,#d9e1e9 100%)}
+.character-rail[data-env="home"] .character-card{background:linear-gradient(180deg,#edf2f6 0%,#f4f1eb 55%,#e3e5e8 100%)}
+.character-rail[data-env="home"] .character-card:before{opacity:.48;background:linear-gradient(0deg,#7e9b76 0 12%,transparent 12%),linear-gradient(135deg,transparent 35%,#b67f5a 36% 54%,transparent 55%),linear-gradient(225deg,transparent 35%,#ca9469 36% 54%,transparent 55%);clip-path:polygon(0 44%,50% 0,100% 44%,100% 100%,0 100%)}
+.character-card:before{content:"";position:absolute;inset:38% 0 0;opacity:.78;background:linear-gradient(0deg,#648375 0 15%,transparent 15%),repeating-linear-gradient(90deg,transparent 0 10px,#728f88 10px 33px,transparent 33px 39px);clip-path:polygon(0 23%,12% 23%,12% 8%,27% 8%,27% 34%,39% 34%,39% 0,54% 0,54% 22%,67% 22%,67% 10%,80% 10%,80% 30%,100% 30%,100% 100%,0 100%)}
+.character-card[data-env="home"]:before{opacity:.48;background:linear-gradient(0deg,#7e9b76 0 12%,transparent 12%),linear-gradient(135deg,transparent 35%,#b67f5a 36% 54%,transparent 55%),linear-gradient(225deg,transparent 35%,#ca9469 36% 54%,transparent 55%);clip-path:polygon(0 44%,50% 0,100% 44%,100% 100%,0 100%)}
+.character-card{background-image:linear-gradient(180deg,rgba(255,255,255,.12),rgba(20,35,58,.18)),var(--scene-bg);background-size:cover;background-position:center}
+.character-card:before{display:none}
+.character-rail[data-env] .character-card{background-color:#e6eaf0;background-image:linear-gradient(180deg,rgba(255,255,255,.12),rgba(20,35,58,.18)),var(--scene-bg);background-size:cover;background-position:center}
+.character-rail[data-env] .character-card:before{display:none}
+.character-card .scene-figure{position:relative;z-index:1;width:100%;height:min(54vh,390px);min-height:250px;object-fit:contain;border-radius:12px;filter:drop-shadow(0 9px 5px #24423a25);animation:character-breathe 3.4s ease-in-out infinite;transform-origin:50% 88%}
+@keyframes character-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.character-card .scene-copy{position:relative;z-index:1;margin:-3px 0 0;padding:12px;border-radius:14px;background:rgba(255,255,255,.93);box-shadow:0 4px 12px #14233a18}
+.character-card .scene-copy .eyebrow{color:#465a72}.character-card .scene-copy h2{font-size:19px}.character-card .scene-copy p{font-size:13px}.character-card .scene-context{margin-top:7px}
+.character-card{min-height:0}
+#character #dash .finance-strip{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:9px 0 0;overflow:visible}
+#character #dash .finance-item{min-width:0;padding:7px;border-radius:9px}
+#character #dash .finance-item span{font-size:10px;line-height:1.25}
+#character #dash .finance-item b{font-size:12px}
+.game-menu{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 9px;margin-bottom:8px;scrollbar-width:thin}
+.game-menu .tab{min-width:105px;flex:1 0 105px}.game-menu .tab b{white-space:nowrap}
+.game-main>.game-menu{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 9px;margin:0 0 10px;scrollbar-width:thin}
+.game-main>.game-menu .menu-item{width:auto;min-width:118px;flex:1 0 auto}
+.finance-strip{display:flex;gap:8px;align-items:stretch;margin:0 0 12px;overflow-x:auto}
+.finance-item{min-width:115px;flex:1;background:var(--card);border:1.5px solid var(--line);border-radius:11px;padding:8px 10px}
+.finance-item span{display:block;font-size:12px;color:var(--muted)}.finance-item b{font-size:14px;overflow-wrap:anywhere}
+.storyboard{min-height:clamp(230px,45vh,500px);display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,260px);align-items:center;gap:14px;background:linear-gradient(120deg,rgba(255,255,255,.94),rgba(247,248,250,.91));border:1.5px solid var(--line);border-radius:16px;padding:24px 28px;margin-bottom:12px;overflow:hidden}
+.storyboard .eyebrow{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#5a6878}.storyboard h2{margin:5px 0 7px}.storyboard p{font-size:14px;color:#536174;max-width:65ch}.storyboard-art{width:100%;height:220px;color:#30435d}.storyboard-art svg{width:100%;height:100%;overflow:visible}
+.storyboard-art img{width:100%;height:100%;object-fit:contain;border-radius:12px}.storyboard-art .storyboard-symbol{width:120px;height:120px}
+.storyboard .tag{display:inline-block;margin-top:10px}
+.panel{margin-top:0}
+@media(max-width:850px){.game-layout{grid-template-columns:170px minmax(0,1fr);gap:12px}.character-card{min-height:calc(100vh - 140px);padding:10px 8px}.character-card .scene-figure{height:310px;min-height:200px}.character-card .scene-copy{padding:9px}.character-card .scene-copy h2{font-size:16px}.character-card .scene-copy p{font-size:12px}.game-menu .tab{flex-basis:92px;min-width:92px;padding:7px 9px}.storyboard{grid-template-columns:minmax(0,1fr) 145px;padding:12px}.storyboard-art{height:100px}}
+@media(max-width:620px){.game-layout{grid-template-columns:1fr}.character-rail{position:relative;top:auto}.character-card{display:grid;grid-template-columns:110px 1fr;align-items:center;min-height:0;padding:8px 12px}.character-card:before{inset:25% 0 0}.character-card .scene-figure{height:140px;min-height:130px}.character-card .scene-copy{margin:0;padding:8px}.character-card .scene-copy .eyebrow,.character-card .scene-context{display:none}.character-card .scene-copy h2{margin:0 0 4px}.character-card .scene-copy p{margin:0}.game-main{order:2}.finance-item{min-width:95px;padding:7px}.storyboard{grid-template-columns:1fr 110px;gap:8px;padding:10px}.storyboard-art{height:90px}.storyboard p{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.character-card .scene-figure{animation:none}}
+.wrap:has(.game-layout){max-width:none;min-height:100vh;padding:12px 24px 24px;background:transparent}
+.game-layout{width:100%;min-height:calc(100vh - 110px);grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:stretch;margin:8px auto 0;padding:16px;border:2px solid rgba(255,255,255,.8);border-radius:24px;overflow:visible;background-color:rgba(255,255,255,.06);background-image:none;box-shadow:0 14px 40px rgba(14,28,35,.18)}
+.character-rail{position:sticky;top:14px;align-self:start}
+.character-card,.character-rail[data-env] .character-card{min-height:calc(100vh - 150px);background:rgba(255,255,255,.25);backdrop-filter:blur(2px);border-color:rgba(255,255,255,.8)}
+.character-card:before,.character-rail[data-env] .character-card:before{display:none}
+.game-menu .tab{background-color:rgba(255,255,255,.88);backdrop-filter:blur(5px)}
+.game-menu .tab[aria-selected=true]{background:var(--ink)}
+.finance-item{background:rgba(255,255,255,.93);backdrop-filter:blur(5px)}
+.storyboard{background:linear-gradient(120deg,rgba(255,255,255,.94),rgba(247,248,250,.91));backdrop-filter:blur(5px)}
+.game-main .panel{background:rgba(255,255,255,.93);backdrop-filter:blur(5px)}
+.character-rail .game-menu{display:grid;grid-template-columns:1fr;gap:6px;overflow:visible;padding:0;margin:10px 0 0}
+.menu-item{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;border:1.5px solid rgba(255,255,255,.72);border-radius:10px;padding:8px 10px;background:rgba(255,255,255,.9);color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer;backdrop-filter:blur(5px)}
+.menu-item b{font-size:14px}.menu-item span{font-size:12px;color:var(--muted);text-align:right}.menu-item[aria-current="page"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}.menu-item[aria-current="page"] span{color:var(--bg);opacity:.8}.menu-item:disabled{opacity:.4;cursor:not-allowed}.menu-item.urg{border-color:var(--bad);color:var(--bad)}.menu-item.new{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
+.storyboard{display:block;min-height:0;padding:20px 22px}
+.storyboard-scene{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,280px);align-items:center;gap:20px;min-height:200px}
+.storyboard-scene.without-art{grid-template-columns:1fr;min-height:0}
+.storyboard-play{margin-top:12px;padding:18px;border:1.5px solid rgba(215,221,229,.95);border-radius:14px;background:rgba(255,255,255,.91);backdrop-filter:blur(4px)}
+#storyboard>.storyboard-play{margin-top:0}
+.storyboard-play>h2{margin-bottom:8px}.storyboard-play>.alert{background:rgba(255,255,255,.88)}
+.game-main{align-self:stretch;padding:3px 2px;min-width:0}
+@media(max-width:850px){.game-layout{grid-template-columns:180px minmax(0,1fr);min-height:calc(100vh - 100px);padding:12px}.character-card,.character-rail[data-env] .character-card{min-height:calc(100vh - 140px)}}
+@media(max-width:850px){.character-rail .game-menu{gap:5px}.menu-item{padding:7px 8px;font-size:13px}.storyboard{padding:16px}.storyboard-scene{grid-template-columns:minmax(0,1fr) 160px;gap:12px;min-height:150px}.storyboard-art{height:160px}}
+@media(max-width:620px){.wrap:has(.game-layout){padding:8px}.game-layout{grid-template-columns:1fr;gap:10px;padding:9px;min-height:calc(100vh - 85px);border-radius:16px}.character-rail{position:relative;top:auto}.character-card,.character-rail[data-env] .character-card{display:block;min-height:0;padding:7px 10px}.character-card>.scene-card{display:grid;grid-template-columns:105px 1fr;gap:8px;align-items:center}.character-card .scene-figure{height:140px;min-height:130px}.character-card .scene-copy{margin:0;padding:8px}.character-card .scene-copy h2{font-size:16px}.character-rail .game-menu{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:7px}.menu-item{font-size:12px}.game-main{padding:0}.game-menu{margin-bottom:5px}.finance-strip{margin-bottom:8px}.storyboard{padding:12px}.storyboard-scene{grid-template-columns:minmax(0,1fr) 100px;gap:8px;min-height:0}.storyboard-art{height:100px}.storyboard-play{margin-top:8px;padding:12px}}
+@media(max-width:620px){.alert.has-art{grid-template-columns:minmax(0,1fr) 76px;gap:8px;padding:12px}.alert-art{width:76px;height:76px}.alert-art svg{width:68px;height:68px}.alert .amt{font-size:24px}}
+body.playing{background-color:#e8edf2;background-image:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.26)),var(--scene-bg);background-size:cover;background-position:center;background-attachment:fixed}
+body.playing .wrap{background:transparent}
+body.playing header.top{position:relative;z-index:1;background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.78);border-radius:14px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:8px 12px}
+#character .character-card{min-height:0}
 @media (prefers-reduced-motion:reduce){.sbar i{transition:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header class="top"><div class="brand"><span>NP</span>Napas Panjang</div><div style="display:flex;gap:8px"><button class="btn hide" id="hb">Riwayat</button><button class="btn" id="th" aria-label="Ganti tema">Tema</button></div></header>
-<nav class="tabs" id="modeTabs" role="tablist" aria-label="Mode permainan"><button class="tab" id="basicMode" role="tab" aria-selected="true"><b>Game utama</b><span>Versi sekarang</span></button><button class="tab" id="premiumMode" role="tab" aria-selected="false"><b>Premium - Dev</b><span>Fitur tambahan</span></button></nav>
-<p class="sm muted hide" id="modeLockNote">Pilihan mode dikunci selama permainan agar progres tidak terhapus. Kamu bisa mengganti mode setelah melihat hasil akhir.</p>
+<header class="top"><div class="brand"><span>NP</span>Napas Panjang</div><div style="display:flex;gap:8px"><button class="btn hide" id="hb">Riwayat</button></div></header>
 <main id="app"></main>
 <dialog id="dlg" aria-label="Riwayat keuangan"></dialog>
 </div>
@@ -131,7 +205,7 @@ const LEVELS={
  mudah:{n:'Mudah',d:'Ada panduan langkah demi langkah. Pengeluaran dan biaya tak terduga paling ringan.',gaji:9000000,side:1500000,exp:5500000,kas:6000000,ef:6000000,sudden:1500000,prob:25,edu:0.4,eduM:0.30,off:0.18,vm:0.8},
  normal:{n:'Normal',d:'Saran singkat tiap bulan. Pengeluaran dan biaya tak terduga menengah.',gaji:9000000,side:1500000,exp:7000000,kas:4000000,ef:3000000,sudden:2000000,prob:33,edu:0.6,eduM:0.45,off:0.22,vm:1},
  sulit:{n:'Sulit',d:'Tanpa panduan. Pengeluaran besar, biaya tak terduga sering, pasar bergejolak.',gaji:9000000,side:1500000,exp:8500000,kas:2000000,ef:1000000,sudden:2500000,prob:40,edu:0.8,eduM:0.55,off:0.25,vm:1.25}};
-let LVSEL='normal',DURSEL=3,GAME_MODE='basic',GAME_ACTIVE=false;
+let LVSEL='normal',DURSEL=3,GAME_MODE='premium',GAME_ACTIVE=false;
 const LVST={mudah:0,normal:4,sulit:10},HI=[1,4],NI=[0,2,3,5,6,7,8];
 let PER;
 /* hr = peluang kejadian mendadak berupa masalah kesehatan, med = pengali biayanya, base = tekanan dasar (stres) */
@@ -178,13 +252,7 @@ const expNow=()=>Math.max(C.exp*0.5,expBase()+S.exAdj);
 const r5=x=>Math.round(x/50000)*50000;
 const $=id=>document.getElementById(id);
 const incomeFactor=m=>{const sc=S.scn[m];return GAME_MODE=='premium'?(C.emp=='wirausaha'?(sc.income||1):1):(sc.income||1)};
-function setModeLock(active){GAME_ACTIVE=active;document.getElementById('basicMode').disabled=active;document.getElementById('premiumMode').disabled=active;$('modeLockNote').classList.toggle('hide',!active)}
-
-document.getElementById('th').onclick=()=>{
- const r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
- r.dataset.theme=dark?'light':'dark'};
-document.getElementById('basicMode').onclick=()=>{if(GAME_ACTIVE)return;GAME_MODE='basic';$('basicMode').setAttribute('aria-selected','true');$('premiumMode').setAttribute('aria-selected','false');setup()};
-document.getElementById('premiumMode').onclick=()=>{if(GAME_ACTIVE)return;GAME_MODE='premium';$('basicMode').setAttribute('aria-selected','false');$('premiumMode').setAttribute('aria-selected','true');setup()};
+function setModeLock(active){GAME_ACTIVE=active}
 
 /* ---------- SETUP ---------- */
 function initState(){
@@ -195,6 +263,7 @@ function initState(){
  intro();
 }
 function setup(){
+ document.body.classList.remove('playing');document.body.style.removeProperty('--scene-bg');
  $('hb').classList.add('hide');
  app.innerHTML=`<section class="hero"><h1>Bertahan sampai gajian, lalu sampai bertahun-tahun.</h1>
  <p>Hadapi 1 sampai 3 tahun keuangan: gaji masuk, tagihan jalan, biaya mendadak dan biaya pendidikan datang, dan sesekali ada tawaran yang mengubah pengeluaran rutinmu. Di akhir tiap tahun, aset bersihmu dinilai. Jaga juga tingkat stresmu, karena keuangan yang rapuh membuat hidup terasa berat.</p></section>
@@ -210,28 +279,36 @@ function setup(){
 }
 
 /* ---------- DASHBOARD ---------- */
-function dash(){
- const tot=C.thn*12,y=Math.floor(S.m/12)+1,bln=S.m%12+1,cov=S.ef/expNow(),sv=Math.round(S.stress),[sl,sc]=stLv(sv),dl=S.cur?Math.round(S.stress-S.cur.stPrev):0;
- $('dash').innerHTML=`<div class="nw"><div class="lbl">Aset bersih · Tahun ${Math.min(y,C.thn)} bulan ${bln} dari 12 · Level ${LEVELS[C.lv].n}</div>
- <div class="big">${fmt(nw())}</div><div class="bar" role="progressbar" aria-valuenow="${S.m}" aria-valuemax="${tot}"><i style="width:${S.m/tot*100}%"></i></div>
- <div class="lbl" style="margin-top:8px">Dana darurat cukup ${cov.toFixed(1)} bulan · Utang ${fmt(debtTotal())}</div></div>
- <div class="stress"><div class="sh"><span><i class="dot" style="background:${sc}"></i>Tingkat stres: ${sl} · ${sv}/100</span><span class="muted sm">${dl>0?'naik '+dl:dl<0?'turun '+(-dl):'tetap'} dari bulan lalu</span></div>
- <div class="sbar" role="progressbar" aria-label="Tingkat stres" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${sv}"><i style="width:${sv}%;background:${sc}"></i></div></div>`;
+function sceneKind(){const text=[S.offer&&S.offer.t,need&&need.title,S.cur&&S.cur.ev&&S.cur.ev[0],S.cur&&S.cur.edu&&S.cur.edu[0],S.tab].filter(Boolean).join(' ').toLowerCase();if(/dokter|medis|kesehatan|rumah sakit|obat|berobat|sakit|gigi/.test(text))return['Kunjungan dokter','doctor'];if(/orang tua|ibu|ayah|keluarga/.test(text))return['Keluarga','family'];if(/rumah|kontrakan|kpr/.test(text))return['Tempat tinggal','home'];if(/kopi/.test(text))return['Kopi harian','coffee'];if(/makanan|makan|restoran|liburan|hiburan|gaya hidup/.test(text))return['Gaya hidup','food'];if(/pendidikan|sekolah|kursus|ujian|semester/.test(text))return['Pendidikan','school'];if(/transportasi|kendaraan|perjalanan|motor/.test(text))return['Perjalanan','travel'];if(/belanja|gadget|branded|kartu kredit/.test(text))return['Belanja','shopping'];if(/tawaran|off/.test(text))return['Tawaran bulan ini','offer'];return['Rutinitas bulan ini','daily']}
+function sceneIcon(kind){const shapes={doctor:'<circle cx="20" cy="13" r="5"/><path d="M11 29c0-6 4-10 9-10s9 4 9 10M20 19v10m-4-9v4a4 4 0 0 0 8 0v-4m-1-3 5 2"/>',family:'<circle cx="13" cy="14" r="4"/><circle cx="27" cy="15" r="4"/><path d="M5 30c0-6 3-10 8-10s8 4 8 10m-1-8c2-2 4-3 7-3 5 0 8 4 8 10"/>',home:'<path d="m4 17 16-13 16 13v17H4zM15 34V22h10v12M10 19h4m12 0h4"/>',coffee:'<path d="M9 13h20v14a7 7 0 0 1-7 7h-6a7 7 0 0 1-7-7zM29 17h4a4 4 0 0 1 0 8h-4M15 8c-2-2 1-3 0-5m7 5c-2-2 1-3 0-5"/>',food:'<circle cx="20" cy="21" r="13"/><circle cx="20" cy="21" r="8"/><path d="M4 5v12m-3-12v7a3 3 0 0 0 6 0V5m-3 12v16m30-28v28m0-28c-5 4-6 10-6 16h6"/>',school:'<path d="m4 14 16-9 16 9-16 9zM10 18v10c6 5 14 5 20 0V18M36 14v13"/>',travel:'<path d="M4 24h32l-4 8H8zM9 24l5-11h12l6 11M17 13V7h7v6M12 32v3m16-3v3"/>',shopping:'<path d="M8 14h24l-2 21H10zM15 14a5 5 0 0 1 10 0m-9 8v4m8-4v4"/>',offer:'<path d="M5 9h30v23H5zM5 15h30m-22 7h7m-7 5h14"/>',daily:'<rect x="5" y="10" width="30" height="23" rx="4"/><path d="M5 16h30m-10 5h7"/>'};return `<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${shapes[kind]||shapes.daily}</svg>`}
+function scenePanel(){
+ const [label]=sceneKind(),p=PER||{nama:'Tokoh utama',umur:'',fam:'Perjalanan keuanganmu'};
+ let title=`Menjalani bulan demi bulan`,copy=`${p.nama} mengatur pemasukan, kebutuhan keluarga, dan rencana masa depan. Setiap keputusan kecil ikut membentuk kondisi keuangannya.`;
+ if(S.offer){title=S.offer.t;copy=S.offer.desc}else if(need){title=need.title;copy=need.desc}else if(S.cur&&S.cur.ev){title=S.cur.ev[0];copy='Pengeluaran tak terduga datang bulan ini. Tentukan sumber dana yang paling aman untuk menutupnya.'}else if(S.cur&&S.cur.edu){title=S.cur.edu[0];copy='Kebutuhan pendidikan keluarga muncul. Atur pembayarannya tanpa mengganggu kebutuhan pokok.'}else if(S.tab==='kas')copy='Pastikan tabungan siap pakai cukup untuk kebutuhan bulan ini dan bulan berikutnya.';else if(S.tab==='ef')copy='Dana darurat memberi ruang bernapas saat pemasukan terganggu atau biaya mendadak datang.';else if(S.tab==='ins')copy='Perlindungan kesehatan membantu keluarga menghadapi risiko biaya medis.';else if(S.tab==='off')copy='Timbang dampak tawaran ini pada kas, pengeluaran rutin, dan ketenangan keluarga.';
+ return `<section class="scene-card" aria-label="Tokoh ${p.nama}"><img class="scene-figure" src="asset/ava/${p.nama.toLowerCase()}.png" alt="Ilustrasi ${p.nama}"/><div class="scene-copy"><div class="eyebrow">Tahun ${Math.floor(S.m/12)+1} · Bulan ${S.m%12+1}</div><h2>${title}</h2><p>${copy}</p><span class="scene-context">${sceneIcon(sceneKind()[1])}${label}</span></div></section>`
+}
+function storyboardHTML(){
+ const name=PER.nama;
+ let title=`Bulan ${S.m%12+1}: keputusan keuangan ${name}`,copy=`Amati keadaan ${name} bulan ini, lalu pilih menu di bawah keterangan tokoh untuk melihat kebutuhan dan keputusan yang tersedia.`;
+ if(S.offer){title=S.offer.t;copy=S.offer.desc}else if(need){title=need.title;copy=need.desc}else if(S.cur&&S.cur.ev){title=S.cur.ev[0];copy='Pengeluaran mendadak datang bulan ini. Tentukan cara membayar dan dampaknya pada keuanganmu.'}else if(S.cur&&S.cur.edu){title=S.cur.edu[0];copy='Kebutuhan pendidikan keluarga muncul bulan ini. Pilih cara membayarnya.'}else if(S.tab==='off'&&!S.offer){title='Belum ada tawaran bulan ini';copy='Tawaran muncul sesekali. Sementara itu, lanjutkan mengelola keuangan dan melihat ringkasan bulan ini.'}
+ const context=[title,copy,S.offer&&S.offer.t,need&&need.title,S.cur&&S.cur.ev&&S.cur.ev[0]].filter(Boolean).join(' ').toLowerCase();
+ const image=/dokter|sakit|gigi|medis|berobat|kesehatan/.test(context)?'doctor.png':/mobil|motor|kendaraan|mogok|servis|transportasi/.test(context)?'mobil.png':/orang tua|ibu|ayah/.test(context)?'orang_tua.png':/pendidikan|sekolah|daftar ulang|semester|ujian|sertifikasi|kursus/.test(context)?'sekolah.png':/rumah|pipa air|kulkas|\bac\b|bocor/.test(context)?'rumah.png':'';
+ const art=need&&image?`<img src="asset/etc/${image}" alt="Ilustrasi ${image.replace('.png','').replace('_',' ')}">`:'';
+ const on=!!need&&need.rem>=1;
+ return `<section class="storyboard-play" aria-live="polite" role="tabpanel">${S.msg&&S.tab!='need'?`<div class="msg" role="status">${S.msg}</div>`:''}${tabHTML(need?art:'')}<div class="foot"><p class="sm muted">${on?'Selesaikan kebutuhan mendadak dulu sebelum lanjut.':S.offer?'Ada tawaran yang menunggu keputusanmu. Jika tidak dipilih, tawaran hangus saat bulan berakhir.':'Sudah selesai mengatur bulan ini?'}</p><button class="btn pri" id="nx" ${on?'disabled':''}>Akhiri bulan ini</button></div></section>`
+}function dash(){
+ $('dash').innerHTML=`<div class="finance-strip"><div class="finance-item"><span>Aset bersih</span><b>${fmt(nw())}</b></div><div class="finance-item"><span>Kas</span><b>${fmt(S.cash)}</b></div><div class="finance-item"><span>Dana darurat</span><b>${(S.ef/expNow()).toFixed(1)} bulan</b></div><div class="finance-item"><span>Pengeluaran rutin</span><b>${fmt(expNow())}</b></div><div class="finance-item"><span>Utang</span><b>${fmt(debtTotal())}</b></div><div class="finance-item"><span>Stres</span><b>${Math.round(S.stress)}/100</b></div></div>`;
 }
 function intro(){
- $('hb').classList.add('hide');
- const p=PER,pr=Math.round(C.exp*0.03);
- app.innerHTML=`<section class="hero"><h1>Kenali tokohmu.</h1><p>Sebelum mulai, baca profil tokoh yang akan kamu mainkan. Kondisi kesehatan dan keluarganya memengaruhi seberapa sering biaya medis datang, dan seberapa besar tekanan yang ia rasakan.</p></section>
- <div class="card"><h2>${p.nama}, ${p.umur} tahun</h2><p style="margin-top:10px">${p.cerita}</p>
- <ul class="ledger"><li><span>Pekerjaan</span><span>${p.pekerjaan||(GAME_MODE=='premium'&&C.emp=='wirausaha'?'Wirausaha':'Pegawai')}</span></li><li><span>Keluarga</span><span>${p.fam}</span></li><li><span>Kondisi kesehatan</span><span>${p.sehat}</span></li><li><span>Penghasilan (pokok + side job)</span><span>${fmt(C.gaji+C.side)}</span></li><li><span>Pengeluaran rutin</span><span>${fmt(C.exp)}</span></li><li><span>Kas awal</span><span>${fmt(C.kas)}</span></li><li><span>Dana darurat awal</span><span>${fmt(C.ef)}</span></li></ul>
- <div class="msg" style="margin-top:14px"><b>Keputusan pertamamu: asuransi kesehatan.</b> Premi ${fmt(pr)} per bulan dan menanggung 80% biaya kejadian medis. Jika mendaftar sekarang, premi dipotong sejak bulan pertama. ${p.saran}</div>
- <div class="row"><button class="btn pri" id="insy">Daftar asuransi dan mulai</button><button class="btn" id="insn">Mulai tanpa asuransi</button></div>
- <p class="sm muted" style="margin-top:10px">Keputusan ini tidak permanen. Kamu bisa mengaktifkan atau menghentikan asuransi kapan saja lewat tab Asuransi.</p></div>`;
+ $('hb').classList.add('hide');document.body.classList.add('playing');
+ const p=PER,pr=Math.round(C.exp*0.03),isBiz=(GAME_MODE=='premium'&&C.emp=='wirausaha')||/warung|katering/i.test(PER.pekerjaan||''),bgFile=isBiz?'W%20Warung.png':(['Tio','Sinta'].includes(PER.nama)?'P%202.png':'P%201.png');
+ document.body.style.setProperty('--scene-bg','url("asset/bg/'+bgFile+'")');
+ app.innerHTML=`<div class="game-layout"><aside class="character-rail" id="character" aria-label="Tokoh"><div class="character-card">${scenePanel()}</div></aside><main class="game-main"><section class="storyboard" aria-label="Pengenalan tokoh"><div class="storyboard-scene without-art"><div class="storyboard-copy"><div class="eyebrow">Sebelum permainan · ${LEVELS[C.lv].n} · ${C.thn} tahun</div><h2>Kenali ${p.nama}</h2><p>${p.cerita}</p></div></div><div class="storyboard-play"><h2>Profil keuangan</h2><ul class="ledger"><li><span>Usia</span><span>${p.umur} tahun</span></li><li><span>Pekerjaan</span><span>${p.pekerjaan||(GAME_MODE=='premium'&&C.emp=='wirausaha'?'Wirausaha':'Pegawai')}</span></li><li><span>Keluarga</span><span>${p.fam}</span></li><li><span>Kondisi kesehatan</span><span>${p.sehat}</span></li><li><span>Penghasilan pokok + side job</span><span>${fmt(C.gaji+C.side)}</span></li><li><span>Pengeluaran rutin</span><span>${fmt(C.exp)}</span></li><li><span>Kas awal</span><span>${fmt(C.kas)}</span></li><li><span>Dana darurat awal</span><span>${fmt(C.ef)}</span></li></ul><div class="msg" style="margin-top:14px"><b>Pertanyaan pertama: apakah ${p.nama} akan memakai asuransi kesehatan?</b><br>Premi ${fmt(pr)} per bulan; asuransi menanggung 80% biaya kejadian medis. ${p.saran}</div><div class="row"><button class="btn pri" id="insy">Daftar asuransi dan mulai</button><button class="btn" id="insn">Mulai tanpa asuransi</button></div><p class="sm muted" style="margin-top:10px">Asuransi dapat diaktifkan atau dihentikan nanti melalui menu permainan.</p></div></section></main></div>`;
+ $('character').dataset.env=isBiz?'home':'city';$('character').style.setProperty('--scene-bg','url("asset/bg/'+bgFile+'")');$('character').querySelector('.scene-copy').innerHTML='<div class="eyebrow">Tokoh utama</div><h2>'+p.nama+', '+p.umur+' tahun</h2><p>'+(p.pekerjaan||(GAME_MODE=='premium'&&C.emp=='wirausaha'?'Wirausaha':'Pegawai'))+' · '+p.fam+'</p>';
  window.scrollTo(0,0);
- const begin=ins=>{S.ins=ins;S.insStart=ins;S.insUntil=ins?3:0;S.vehicleIns='';S.cur=null;setModeLock(true);app.innerHTML='<div id="dash"></div><div class="stage" id="stage"></div>';$('hb').classList.remove('hide');monthStart()};
+ const begin=ins=>{S.ins=ins;S.insStart=ins;S.insUntil=ins?3:0;S.vehicleIns='';S.cur=null;setModeLock(true);app.innerHTML='<div class="game-layout"><aside class="character-rail" id="character" aria-label="Tokoh"><div class="character-card">'+scenePanel()+'</div><div id="dash"></div></aside><main class="game-main"><nav class="game-menu" id="game-menu" aria-label="Menu permainan"></nav><div id="storyboard"></div><div class="stage" id="stage"></div></main></div>';$('character').dataset.env=isBiz?'home':'city';const selectedBg=isBiz?'W%20Warung.png':(['Tio','Sinta'].includes(PER.nama)?'P%202.png':'P%201.png');document.body.classList.add('playing');document.body.style.setProperty('--scene-bg','url("asset/bg/'+selectedBg+'")');$('character').closest('.game-layout').style.setProperty('--scene-bg','url("asset/bg/'+selectedBg+'")');$('character').querySelector('.scene-copy').innerHTML='<div class="eyebrow">Tokoh utama</div><h2>'+PER.nama+', '+PER.umur+' tahun</h2><p>'+(PER.pekerjaan||(GAME_MODE=='premium'&&C.emp=='wirausaha'?'Wirausaha':'Pegawai'))+' · '+PER.fam+'</p>'; $('hb').classList.remove('hide');monthStart()};
  $('insy').onclick=()=>begin(true);$('insn').onclick=()=>begin(false);
-}
-/* ---------- STRES ---------- */
+}/* ---------- STRES ---------- */
 function bump(v,why){S.stress=clamp(S.stress+v,0,100);if(S.cur)S.cur.stU.push(why+' (+'+v+')');if($('dash'))dash()}
 function updateStress(){
  const ex=expNow(),cov=S.ef/ex,u=S.cur.stU,d=S.cur.stD,net=S.cur.inc+S.cur.side-S.cur.exp-S.cur.prem,ng=S.com.filter(c=>c.id=='gaya').length,offerStress=S.com.filter(c=>c.active!==false&&c.stressUntil&&S.m<c.stressUntil).reduce((a,c)=>a+(c.stress||0),0);
@@ -330,8 +407,8 @@ const OFFERS=[
  {id:'gadget',once:1,min:4,make:(e)=>({t:'Membeli gadget terbaru',desc:'Gadget baru membuat aktivitas harian terasa lebih nyaman, tetapi menguras kas.',up:r5(e*0.80),parts:[],stress:-10,note:'Tingkat stres turun 10 poin saat tawaran diterima.'})},
  {id:'pulsa',once:1,min:3,make:(e)=>({t:'Paket pulsa setahun dibayar di awal',desc:'Bayar paket pulsa untuk setahun sekaligus dengan biaya bulanan yang lebih hemat.',up:r5(e*0.12),parts:[['Penghematan paket pulsa selama 12 bulan',-r5(e*0.015)]],duration:12,note:'Penghematan berlaku selama 12 bulan.'})},
  {id:'gaya',make:(e)=>{return{t:'Naik gaya hidup: makan di luar dan hiburan rutin',desc:'Tidak ada keuntungan finansial, tapi bisa meredakan stres.',up:0,parts:[['Makan di luar dan hiburan',r5(e*0.06)]],stress:-20,note:'Tingkat stresmu turun 20 poin sekarang, dan stres jangka panjangmu ikut lebih rendah selama komitmen ini berjalan. Harganya: pengeluaran rutin naik setiap bulan.'}}},
- {id:'kopi',make:(e)=>({t:'Langganan kopi harian',desc:'Menambahkan anggaran rutin untuk membeli kopi setiap hari.',up:0,parts:[['Pengeluaran kopi rutin',r5(e*0.02)]],stress:0,note:'Pengeluaran kopi menambah biaya rutin setiap bulan selama sisa permainan.'})},
- {id:'makananFancy',make:(e)=>({t:'Makanan fancy setiap bulan',desc:'Menambahkan anggaran rutin untuk menikmati makanan yang lebih mewah setiap bulan.',up:0,parts:[['Pengeluaran makanan fancy',r5(e*0.08)]],stress:0,note:'Pengeluaran makanan fancy menambah biaya rutin setiap bulan selama sisa permainan.'})},
+ {id:'kopi',make:(e)=>({t:'Langganan kopi harian',desc:'Menambahkan anggaran rutin untuk membeli kopi setiap hari.',up:0,parts:[['Pengeluaran kopi rutin',r5(e*0.02)]],stress:-5,note:'Stres turun 5 poin saat tawaran diterima. Pengeluaran kopi menambah biaya rutin setiap bulan selama sisa permainan.'})},
+ {id:'makananFancy',make:(e)=>({t:'Makanan fancy setiap bulan',desc:'Menambahkan anggaran rutin untuk menikmati makanan yang lebih mewah setiap bulan.',up:0,parts:[['Pengeluaran makanan fancy',r5(e*0.08)]],stress:-5,note:'Stres turun 5 poin saat tawaran diterima. Pengeluaran makanan fancy menambah biaya rutin setiap bulan selama sisa permainan.'})},
  {id:'branded',once:1,min:2,make:(e)=>({t:'Beli barang branded',desc:'Membeli barang bermerek yang sudah lama kamu inginkan. Biaya dibayar sekali; rasa puasnya membantu hanya dalam waktu singkat.',up:r5(e*0.35),parts:[],duration:1,stress:8,note:'Efek stres hanya berlangsung selama bulan ini; pembelian tidak menambah pengeluaran rutin.'})},
  {id:'cicilanbranded',once:1,min:3,make:(e)=>({t:'Paket belanja branded tiga bulan',desc:'Belanja barang bermerek dengan skema cicilan pendek. Pembelian memberi rasa puas sekarang, sementara kewajiban cicilan menambah tekanan sampai lunas.',up:0,parts:[['Cicilan barang branded (3 bulan)',r5(e*0.08)]],duration:3,stress:-5,monthlyStress:5,note:'Stres turun 5 poin pada bulan pembelian. Mulai bulan berikutnya, cicilan menambah 5 poin stres per bulan selama 3 bulan.'})},
  {id:'liburan',once:1,min:3,make:(e)=>({t:'Paket liburan singkat tiga bulan',desc:'Bayar paket rekreasi bertahap. Pengalaman ini membantu melepas penat, tetapi menambah pengeluaran sementara.',up:0,parts:[['Paket rekreasi (3 bulan)',r5(e*0.035)]],duration:3,stress:-7,note:'Pengeluaran tambahan dan penurunan stres berlaku selama 3 bulan.'})},
@@ -414,7 +491,7 @@ function anyAvail(){const cp=caps();return S.cash>=1||S.ef>=1||Object.keys(INV).
 function forceIfStuck(){
  if(need.rem>=1&&!anyAvail()){bump(10,'terpaksa berutang pinjol');S.debt.pinjol+=need.rem*1.1;S.adm+=need.rem*0.1;S.pinjolN++;S.cur.bor=1;S.cur.dec.push('Tidak ada sumber dana tersisa, kekurangan '+fmt(need.rem)+' menjadi utang pinjol darurat.');need.rem=0;return true}
  return false}
-function needHTML(){
+function needHTML(art=''){
  const r=need.rem,cp=caps(),o=[
  ['cash','Pakai uang kas','Tanpa bunga',S.cash,'Sisa kas '+fmt(S.cash),'g'],
  ['ef','Ambil dana darurat','Memang untuk keadaan seperti ini',S.ef,'Tersedia '+fmt(S.ef),'g'],
@@ -422,8 +499,8 @@ function needHTML(){
  ['keluarga','Pinjam keluarga/teman','Tanda terima kasih 1% per bulan (2% jika lewat 6 bulan), plafon 1× gaji',cp.k,'Sisa plafon '+fmt(cp.k),'g'],
  ['kartu','Kartu kredit / paylater','Bunga 2,5% per bulan, plafon mengikuti dana darurat (minimal 1× gaji)',cp.c,'Sisa plafon '+fmt(cp.c),'r'],
  ['pinjol','Pinjol','Cair cepat, plafon besar (10× gaji). Bunga 9% per bulan + admin 10%',cp.p,'Bunga 9%/bln','r']];
- return `<div class="alert"><h3>${need.title}</h3><p class="muted sm" style="margin:4px 0 8px">${need.desc}</p>
- <div class="muted sm">Masih perlu ditutup</div><div class="amt">${fmt(r)}</div></div>
+ return `<div class="alert ${art?'has-art':''}"><div><h3>${need.title}</h3><p class="muted sm" style="margin:4px 0 8px">${need.desc}</p>
+ <div class="muted sm">Masih perlu ditutup</div><div class="amt">${fmt(r)}</div></div>${art?`<div class="alert-art" aria-hidden="true">${art}</div>`:''}</div>
  ${C.lv=='mudah'?'<div class="msg" style="margin-top:12px">Panduan: pakai dana darurat lebih dulu, karena memang untuk ini. Kalau kurang, lanjutkan dengan kas atau jual Surat Utang. Pinjam keluarga paling murah (1% per bulan), tapi lunasi sebelum 6 bulan agar tidak naik jadi 2%. Hindari pinjol dan kartu kredit karena bunganya sangat tinggi.</div>':''}${need.title.toLowerCase().includes('pajak')?`<div class="opts"><button class="opt" data-s="tax"><span><b>Catat sebagai utang pajak</b><span class="sm muted">Tagihan tetap tercatat sebagai kewajiban dan muncul di rekap akhir.</span></span><span class="tag r">${fmt(r)}</span></button></div>`:''}<div class="opts">${o.map(([k,t,d,a,tg,c])=>`<button class="opt" data-s="${k}" ${a<1?'disabled':''}><span><b>${t}</b><span class="sm muted">${d}</span></span><span class="tag ${c}">${tg}</span></button>`).join('')}</div>`;
 }
 function fund(k){
@@ -449,12 +526,12 @@ function xrow(k,title,desc,bal,fills,acts){
  ${fills.map(([l,v])=>`<button class="fill" data-k="${k}" data-v="${Math.max(0,Math.round(v))}">${l}</button>`).join('')}
  ${acts.map(([a,l,c])=>`<button class="btn ${c||''}" data-act="${a}" data-k="${k}">${l}</button>`).join('')}</div></div>`;
 }
-function tabHTML(){
+function tabHTML(needArt=''){
  const t=S.tab,ex=expNow();
- if(t=='need')return needHTML();
+ if(t=='need')return needHTML(needArt);
  if(t=='sum')return `<h2>Ringkasan bulan ini</h2>${S.offer?'<div class="msg">Ada tawaran baru: '+S.offer.t+'. Buka tab Tawaran.</div>':''}<ul class="ledger">${S.ledger.map(([x,v])=>`<li><span>${x}</span><span class="${v>=0?'pos':'neg'}">${v>=0?'+':''}${fmt(v)}</span></li>`).join('')}</ul>
  ${netLine()}${stressLine()}${adviceHTML()}
- <p class="sm muted" style="margin-top:10px">Pilih tab di atas untuk mengisi atau mengambil dana. Tekan Akhiri bulan jika sudah selesai.</p>`;
+ <p class="sm muted" style="margin-top:10px">Pilih menu di samping tokoh untuk mengisi atau mengambil dana. Tekan Akhiri bulan jika sudah selesai.</p>`;
  if(t=='off')return `<h2>Tawaran</h2><p class="muted sm">Tawaran muncul acak dan dapat mengubah kondisi keuanganmu. Timbang untung ruginya.</p>${S.offer?offerHTML(S.offer):'<p style="margin-top:12px">Tidak ada tawaran bulan ini.</p>'}${pointsHTML()}${commitHTML()}`;
  if(t=='kas')return `<h2>Tabungan (kas)</h2><p class="muted sm">Uang yang siap pakai. Tidak ada bunga dan nilainya terkikis inflasi.</p>
  <div class="big2" style="margin:10px 0">${fmt(S.cash)}</div>
@@ -512,9 +589,9 @@ function render(){
  const on=!!need&&need.rem>=1,tabs=[['sum','Ringkasan',''],['kas','Tabungan',fmt(S.cash)],['ef','Dana darurat',fmt(S.ef)],['inv','Investasi',fmt(invT())],['debt','Utang',fmt(debtTotal())],['ins','Asuransi',S.ins?'Aktif':'Nonaktif'],['off','Tawaran',S.offer?'Baru':'Tidak ada']];
  if(S.offer){const i=tabs.findIndex(t=>t[0]=='off');tabs.unshift(tabs.splice(i,1)[0])}
  if(on)tabs.unshift(['need','Mendesak',fmt(need.rem)]);
- $('stage').innerHTML=`<div class="tabs" role="tablist">${tabs.map(([k,l,v])=>`<button class="tab ${k=='need'?'urg':k=='off'&&S.offer?'new':''}" role="tab" aria-selected="${S.tab==k}" data-tab="${k}" ${on&&k!='need'?'disabled':''}><b>${l}</b><span>${v||'&nbsp;'}</span></button>`).join('')}</div>
- <div class="card panel" role="tabpanel">${S.msg&&S.tab!='need'?`<div class="msg" role="status">${S.msg}</div>`:''}${tabHTML()}</div>
- <div class="foot"><p class="sm muted">${on?'Selesaikan kebutuhan mendadak dulu sebelum lanjut.':S.offer?'Ada tawaran yang menunggu keputusanmu. Jika tidak dipilih, tawaran hangus saat bulan berakhir.':'Sudah selesai mengatur bulan ini?'}</p><button class="btn pri" id="nx" ${on?'disabled':''}>Akhiri bulan ini</button></div>`;
+ $('game-menu').innerHTML=tabs.map(([k,l,v])=>`<button class="menu-item ${k=='need'?'urg':k=='off'&&S.offer?'new':''}" aria-current="${S.tab==k?'page':'false'}" data-tab="${k}" ${on&&k!='need'?'disabled':''}><b>${l}</b><span>${v||'&nbsp;'}</span></button>`).join('');
+ $('storyboard').innerHTML=storyboardHTML();
+ $('stage').innerHTML='';
 }
 function afterEvents(){need=null;S.tab=S.offer?'off':'sum';dash();render()}
 function act(a,k){

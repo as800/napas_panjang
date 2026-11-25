@@ -129,23 +129,24 @@ summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px}
 .character-rail[data-env="home"] .character-card:before{opacity:.48;background:linear-gradient(0deg,#7e9b76 0 12%,transparent 12%),linear-gradient(135deg,transparent 35%,#b67f5a 36% 54%,transparent 55%),linear-gradient(225deg,transparent 35%,#ca9469 36% 54%,transparent 55%);clip-path:polygon(0 44%,50% 0,100% 44%,100% 100%,0 100%)}
 .character-card:before{content:"";position:absolute;inset:38% 0 0;opacity:.78;background:linear-gradient(0deg,#648375 0 15%,transparent 15%),repeating-linear-gradient(90deg,transparent 0 10px,#728f88 10px 33px,transparent 33px 39px);clip-path:polygon(0 23%,12% 23%,12% 8%,27% 8%,27% 34%,39% 34%,39% 0,54% 0,54% 22%,67% 22%,67% 10%,80% 10%,80% 30%,100% 30%,100% 100%,0 100%)}
 .character-card[data-env="home"]:before{opacity:.48;background:linear-gradient(0deg,#7e9b76 0 12%,transparent 12%),linear-gradient(135deg,transparent 35%,#b67f5a 36% 54%,transparent 55%),linear-gradient(225deg,transparent 35%,#ca9469 36% 54%,transparent 55%);clip-path:polygon(0 44%,50% 0,100% 44%,100% 100%,0 100%)}
-.character-card{background-image:linear-gradient(180deg,rgba(255,255,255,.12),rgba(20,35,58,.18)),var(--scene-bg);background-size:cover;background-position:center}
+.character-card{background-image:linear-gradient(180deg,rgba(255,255,255,.42),rgba(20,35,58,.18)),var(--scene-bg);background-size:cover;background-position:center}
 .character-card:before{display:none}
-.character-rail[data-env] .character-card{background-color:#e6eaf0;background-image:linear-gradient(180deg,rgba(255,255,255,.12),rgba(20,35,58,.18)),var(--scene-bg);background-size:cover;background-position:center}
+.character-rail[data-env] .character-card{background-color:#e6eaf0;background-image:linear-gradient(180deg,rgba(255,255,255,.42),rgba(20,35,58,.18)),var(--scene-bg);background-size:cover;background-position:center}
 .character-rail[data-env] .character-card:before{display:none}
 .character-card .scene-figure{position:relative;z-index:1;width:100%;height:min(54vh,390px);min-height:250px;object-fit:contain;border-radius:12px;filter:drop-shadow(0 9px 5px #24423a25);animation:character-breathe 3.4s ease-in-out infinite;transform-origin:50% 88%}
 @keyframes character-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .character-card .scene-copy{position:relative;z-index:1;margin:-3px 0 0;padding:12px;border-radius:14px;background:rgba(255,255,255,.93);box-shadow:0 4px 12px #14233a18}
 .character-card .scene-copy .eyebrow{color:#465a72}.character-card .scene-copy h2{font-size:19px}.character-card .scene-copy p{font-size:13px}.character-card .scene-context{margin-top:7px}
 .character-card{min-height:0}
-#character #dash .finance-strip{display:grid;grid-template-columns:1fr;gap:6px;margin:9px 0 0;overflow:visible}
+#character #dash .finance-strip{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:9px 0 0;overflow:visible}
 #character #dash .finance-item{min-width:0;padding:7px;border-radius:9px}
 #character #dash .finance-item span{font-size:10px;line-height:1.25}
 #character #dash .finance-item b{font-size:12px}
 .game-menu{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 9px;margin-bottom:8px;scrollbar-width:thin}
 .game-menu .tab{min-width:105px;flex:1 0 105px}.game-menu .tab b{white-space:nowrap}
 .game-main>.game-menu{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 9px;margin:0 0 10px;scrollbar-width:thin}
-.game-main>.game-menu .menu-item{width:auto;min-width:118px;flex:1 0 auto}
+.game-main>.game-menu .menu-item{width:auto;min-width:112px;flex:1 0 auto;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px}
+.game-main>.game-menu .menu-item span{text-align:left}
 .finance-strip{display:flex;gap:8px;align-items:stretch;margin:0 0 12px;overflow-x:auto}
 .finance-item{min-width:115px;flex:1;background:var(--card);border:1.5px solid var(--line);border-radius:11px;padding:8px 10px}
 .finance-item span{display:block;font-size:12px;color:var(--muted)}.finance-item b{font-size:14px;overflow-wrap:anywhere}
@@ -181,7 +182,7 @@ summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px}
 @media(max-width:850px){.character-rail .game-menu{gap:5px}.menu-item{padding:7px 8px;font-size:13px}.storyboard{padding:16px}.storyboard-scene{grid-template-columns:minmax(0,1fr) 160px;gap:12px;min-height:150px}.storyboard-art{height:160px}}
 @media(max-width:620px){.wrap:has(.game-layout){padding:8px}.game-layout{grid-template-columns:1fr;gap:10px;padding:9px;min-height:calc(100vh - 85px);border-radius:16px}.character-rail{position:relative;top:auto}.character-card,.character-rail[data-env] .character-card{display:block;min-height:0;padding:7px 10px}.character-card>.scene-card{display:grid;grid-template-columns:105px 1fr;gap:8px;align-items:center}.character-card .scene-figure{height:140px;min-height:130px}.character-card .scene-copy{margin:0;padding:8px}.character-card .scene-copy h2{font-size:16px}.character-rail .game-menu{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:7px}.menu-item{font-size:12px}.game-main{padding:0}.game-menu{margin-bottom:5px}.finance-strip{margin-bottom:8px}.storyboard{padding:12px}.storyboard-scene{grid-template-columns:minmax(0,1fr) 100px;gap:8px;min-height:0}.storyboard-art{height:100px}.storyboard-play{margin-top:8px;padding:12px}}
 @media(max-width:620px){.alert.has-art{grid-template-columns:minmax(0,1fr) 76px;gap:8px;padding:12px}.alert-art{width:76px;height:76px}.alert-art svg{width:68px;height:68px}.alert .amt{font-size:24px}}
-body.playing{background-color:#e8edf2;background-image:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.26)),var(--scene-bg);background-size:cover;background-position:center;background-attachment:fixed}
+body.playing{background-color:#e8edf2;background-image:linear-gradient(180deg,rgba(255,255,255,.68),rgba(255,255,255,.58)),var(--scene-bg);background-size:cover;background-position:center;background-attachment:fixed}
 body.playing .wrap{background:transparent}
 body.playing header.top{position:relative;z-index:1;background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.78);border-radius:14px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:8px 12px}
 #character .character-card{min-height:0}

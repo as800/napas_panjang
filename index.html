@@ -115,6 +115,8 @@ summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px}
 <body>
 <div class="wrap">
 <header class="top"><div class="brand"><span>NP</span>Napas Panjang</div><div style="display:flex;gap:8px"><button class="btn hide" id="hb">Riwayat</button><button class="btn" id="th" aria-label="Ganti tema">Tema</button></div></header>
+<nav class="tabs" id="modeTabs" role="tablist" aria-label="Mode permainan"><button class="tab" id="basicMode" role="tab" aria-selected="true"><b>Game utama</b><span>Versi sekarang</span></button><button class="tab" id="premiumMode" role="tab" aria-selected="false"><b>Premium - Dev</b><span>Fitur tambahan</span></button></nav>
+<p class="sm muted hide" id="modeLockNote">Pilihan mode dikunci selama permainan agar progres tidak terhapus. Kamu bisa mengganti mode setelah melihat hasil akhir.</p>
 <main id="app"></main>
 <dialog id="dlg" aria-label="Riwayat keuangan"></dialog>
 </div>
@@ -124,12 +126,12 @@ const rateOf=(k,m,since)=>k=='keluarga'?(since!=null&&m-since>=6?0.02:0.01):RATE
 const capFor=(o,k)=>k=='keluarga'?Math.max(0,C.gaji-o.debt.keluarga):k=='kartu'?Math.max(0,Math.max(C.gaji,o.ef)-o.debt.kartu):Math.max(0,(C.gaji*10-o.debt.pinjol)/1.1);
 const DDESC={keluarga:'Tanda terima kasih 1% per bulan, naik jadi 2% jika belum lunas setelah 6 bulan',kartu:'Bunga 2,5% per bulan, plafon mengikuti dana darurat (minimal 1× gaji)',pinjol:'Bunga 9% per bulan + admin 10%, plafon besar (10× gaji)'};
 const INV={su:{n:'Surat Utang',mu:0.005,sd:0.004,lo:-0.01,hi:0.02,fee:0.01,d:'Risiko rendah · sekitar 6% per tahun, stabil'},rd:{n:'Reksa Dana',mu:0.008,sd:0.04,lo:-0.12,hi:0.12,fee:0.02,d:'Risiko menengah · sekitar 10% per tahun, cukup naik turun'},sh:{n:'Saham',mu:0.012,sd:0.08,lo:-0.25,hi:0.30,fee:0.03,d:'Risiko tinggi · potensi 14% per tahun, bisa jatuh tajam'}};
-const NAMA={keluarga:'Pinjam keluarga/teman',kartu:'Kartu kredit / paylater',pinjol:'Pinjol'};
+const NAMA={keluarga:'Pinjam keluarga/teman',kartu:'Kartu kredit / paylater',pinjol:'Pinjol',pajak:'Utang pajak'};
 const LEVELS={
  mudah:{n:'Mudah',d:'Ada panduan langkah demi langkah. Pengeluaran dan biaya tak terduga paling ringan.',gaji:9000000,side:1500000,exp:5500000,kas:6000000,ef:6000000,sudden:1500000,prob:25,edu:0.4,eduM:0.30,off:0.18,vm:0.8},
  normal:{n:'Normal',d:'Saran singkat tiap bulan. Pengeluaran dan biaya tak terduga menengah.',gaji:9000000,side:1500000,exp:7000000,kas:4000000,ef:3000000,sudden:2000000,prob:33,edu:0.6,eduM:0.45,off:0.22,vm:1},
  sulit:{n:'Sulit',d:'Tanpa panduan. Pengeluaran besar, biaya tak terduga sering, pasar bergejolak.',gaji:9000000,side:1500000,exp:8500000,kas:2000000,ef:1000000,sudden:2500000,prob:40,edu:0.8,eduM:0.55,off:0.25,vm:1.25}};
-let LVSEL='normal',DURSEL=3;
+let LVSEL='normal',DURSEL=3,GAME_MODE='basic',GAME_ACTIVE=false;
 const LVST={mudah:0,normal:4,sulit:10},HI=[1,4],NI=[0,2,3,5,6,7,8];
 let PER;
 /* hr = peluang kejadian mendadak berupa masalah kesehatan, med = pengali biayanya, base = tekanan dasar (stres) */
@@ -146,13 +148,13 @@ const PERSONAS=[
  {nama:'Sari',umur:27,fam:'Lajang, belum ada tanggungan',sehat:'Sehat, rutin berolahraga',hr:0.1,med:1,base:0,
   cerita:'Kamu Sari, 27 tahun, lajang dan sehat. Kamu rutin berolahraga, jarang sakit, dan belum punya tanggungan selain sesekali membantu orang tua di kampung.',
   saran:'Kondisimu sehat dan risiko medisnya rendah. Asuransi tetap melindungi dari kejadian langka, tapi premi bulanan bisa terasa sia-sia kalau tidak pernah terpakai.'},
- {nama:'Tio',umur:32,fam:'Lajang, membantu orang tua',sehat:'Sehat, jarang sakit',hr:0.15,med:1,base:3,income:[0.55,1.45],
+ {nama:'Tio',umur:32,pekerjaan:'Pekerja lepas berbasis proyek',fam:'Lajang, membantu orang tua',sehat:'Sehat, jarang sakit',hr:0.15,med:1,base:3,income:[0.55,1.45],
   cerita:'Kamu Tio, 32 tahun, pekerja lepas di bidang kreatif. Pemasukanmu berubah-ubah mengikuti proyek, tetapi kamu tetap membantu orang tua setiap bulan.',
   saran:'Penghasilanmu bisa berubah dari sekitar 55% sampai 145% dari jumlah normal setiap bulan. Risiko medis rendah, jadi fokuslah menjaga kas untuk bulan sepi.'},
- {nama:'Maya',umur:39,fam:'Menikah, 1 anak, membantu ibu',sehat:'Sehat, tetapi mudah kelelahan',hr:0.2,med:1.05,base:7,income:[0.4,1.6],
+ {nama:'Maya',umur:39,pekerjaan:'Usaha katering rumahan',fam:'Menikah, 1 anak, membantu ibu',sehat:'Sehat, tetapi mudah kelelahan',hr:0.2,med:1.05,base:7,income:[0.4,1.6],
   cerita:'Kamu Maya, 39 tahun, mengelola katering rumahan sambil mengurus anak dan membantu ibumu. Pesanan tidak selalu ramai, sehingga pemasukan keluarga cukup bergejolak.',
   saran:'Penghasilanmu bisa berubah dari sekitar 40% sampai 160% dari jumlah normal setiap bulan. Tanggungan keluarga membuat bulan sepi terasa lebih menekan.'},
- {nama:'Sinta',umur:42,fam:'Menikah, 2 anak usia sekolah',sehat:'Sehat, mengelola warung kecil',hr:0.2,med:1.05,base:7,income:[0.65,1.35],bizRisk:0.1,
+ {nama:'Sinta',umur:42,pekerjaan:'Warung kecil bersama keluarga',fam:'Menikah, 2 anak usia sekolah',sehat:'Sehat, mengelola warung kecil',hr:0.2,med:1.05,base:7,income:[0.65,1.35],bizRisk:0.1,
   cerita:'Kamu Sinta, 42 tahun, menjalankan warung kecil bersama keluarga. Pendapatan usaha naik turun, dan kerusakan stok atau pembayaran pelanggan yang macet kadang membuat usaha merugi.',
   saran:'Penghasilan usaha berubah dari bulan ke bulan. Setiap bulan ada peluang 10% mengalami kerugian usaha sebesar setengah sampai satu kali pengeluaran bulanan.'}
 ];
@@ -167,22 +169,28 @@ document.addEventListener('input',e=>{const t=e.target;if(!t.classList||!t.class
 const fmt=n=>(n<-0.5?'−':'')+'Rp\u00a0'+fmtN(n);
 const rnd=(a,b)=>a+Math.random()*(b-a),clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const norm=()=>Math.sqrt(-2*Math.log(1-Math.random()))*Math.cos(2*Math.PI*Math.random());
-const debtTotal=()=>S.debt.keluarga+S.debt.kartu+S.debt.pinjol;
+const debtTotal=()=>S.debt.keluarga+S.debt.kartu+S.debt.pinjol+(S.taxDebt||0);
 const invT=()=>S.iv.su+S.iv.rd+S.iv.sh;
 const nw=()=>S.cash+S.ef+invT()+S.prop-debtTotal();
+function taxByYear(records){return Array.from({length:C.thn},(_,y)=>{const income=records.filter(r=>Math.floor(r.m/12)==y).reduce((a,r)=>a+r.inc+r.side,0);return{y:y+1,income,tax:Math.round(Math.max(0,income-60000000)*0.03)}})}
 const expBase=()=>C.exp*Math.pow(1.04,Math.floor(S.m/12));
 const expNow=()=>Math.max(C.exp*0.5,expBase()+S.exAdj);
 const r5=x=>Math.round(x/50000)*50000;
 const $=id=>document.getElementById(id);
+const incomeFactor=m=>{const sc=S.scn[m];return GAME_MODE=='premium'?(C.emp=='wirausaha'?(sc.income||1):1):(sc.income||1)};
+function setModeLock(active){GAME_ACTIVE=active;document.getElementById('basicMode').disabled=active;document.getElementById('premiumMode').disabled=active;$('modeLockNote').classList.toggle('hide',!active)}
 
 document.getElementById('th').onclick=()=>{
  const r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
  r.dataset.theme=dark?'light':'dark'};
+document.getElementById('basicMode').onclick=()=>{if(GAME_ACTIVE)return;GAME_MODE='basic';$('basicMode').setAttribute('aria-selected','true');$('premiumMode').setAttribute('aria-selected','false');setup()};
+document.getElementById('premiumMode').onclick=()=>{if(GAME_ACTIVE)return;GAME_MODE='premium';$('basicMode').setAttribute('aria-selected','false');$('premiumMode').setAttribute('aria-selected','true');setup()};
 
 /* ---------- SETUP ---------- */
 function initState(){
- PER=PERSONAS[Math.floor(Math.random()*PERSONAS.length)];
- S={rec:[],px:{su:[100],rd:[100],sh:[100]},ret:{su:0,rd:0,sh:0},stress:18+PER.base+LVST[C.lv],insStart:false,cur:null,tab:'sum',msg:'',m:0,cash:C.kas,ef:C.ef,iv:{su:0,rd:0,sh:0},debt:{keluarga:0,kartu:0,pinjol:0},ins:false,hist:[],scores:[],ledger:[],pinjolN:0,kejadian:0,rugi:0,exAdj:0,gajiMul:1,sideMul:1,prop:0,eqM:0,com:[],offer:null,offLast:{},offLog:[],scn:genScn(),kSince:null,adm:0,buys:[],eduN:0,eduTot:0};
+ const pool=GAME_MODE=='premium'?PERSONAS.filter(p=>C.emp=='wirausaha'?!!(p.income||p.bizRisk):!(p.income||p.bizRisk)):PERSONAS;
+ PER=pool[Math.floor(Math.random()*pool.length)];
+ S={rec:[],px:{su:[100],rd:[100],sh:[100]},ret:{su:0,rd:0,sh:0},stress:18+PER.base+LVST[C.lv],insStart:false,cur:null,tab:'sum',msg:'',m:0,cash:C.kas,ef:C.ef,iv:{su:0,rd:0,sh:0},debt:{keluarga:0,kartu:0,pinjol:0},ccGrace:0,ccShoppingStress:0,ins:false,insUntil:0,vehicleIns:'',vehicleUntil:0,hist:[],scores:[],ledger:[],pinjolN:0,kejadian:0,rugi:0,exAdj:0,gajiMul:1,sideMul:1,prop:0,eqM:0,com:[],offer:null,offLast:{},offLog:[],scn:genScn(),kSince:null,adm:0,buys:[],eduN:0,eduTot:0,taxSettled:false,taxDebt:0,points:0,pointsEarned:0,pointsSpent:0};
  S.yNW=nw();S.hist.push(nw());
  intro();
 }
@@ -194,10 +202,11 @@ function setup(){
  <fieldset class="lv">${Object.entries(LEVELS).map(([k,l])=>`<label class="lvo"><input type="radio" name="lv" value="${k}" ${k==LVSEL?'checked':''}><b>${l.n}</b><span class="sm muted">${l.d}</span>
  <ul class="ledger sm"><li><span>Penghasilan (pokok + side job)</span><span>${fmt(l.gaji+l.side)}</span></li><li><span>Pengeluaran rutin</span><span>${fmt(l.exp)}</span></li><li><span>Kas awal</span><span>${fmt(l.kas)}</span></li><li><span>Dana darurat awal</span><span>${fmt(l.ef)}</span></li><li><span>Peluang biaya mendadak per bulan</span><span>${l.prob}%</span></li><li><span>Peluang biaya pendidikan per semester</span><span>${Math.round(l.edu*100)}%</span></li></ul></label>`).join('')}</fieldset>
  <fieldset class="lv" style="grid-template-columns:repeat(3,1fr)"><legend>Durasi permainan</legend>${[1,2,3].map(y=>`<label class="lvo"><input type="radio" name="dur" value="${y}" ${y==DURSEL?'checked':''}><b>${y} tahun</b><span class="sm muted">${y*12} bulan</span></label>`).join('')}</fieldset>
+ ${GAME_MODE=='premium'?`<fieldset class="lv" style="grid-template-columns:repeat(2,1fr)"><legend>Pekerjaan</legend><label class="lvo"><input type="radio" name="emp" value="pegawai" checked><b>Pegawai</b><span class="sm muted">Penghasilan lebih stabil.</span></label><label class="lvo"><input type="radio" name="emp" value="wirausaha"><b>Wirausaha</b><span class="sm muted">Penghasilan usaha berubah tiap bulan dan ada risiko kerugian usaha.</span></label></fieldset>`:''}
  <div class="row"><button class="btn pri" id="go">Mulai bermain</button></div></div>`;
  app.querySelectorAll('input[name=lv]').forEach(r=>r.onchange=()=>LVSEL=r.value);
  app.querySelectorAll('input[name=dur]').forEach(r=>r.onchange=()=>DURSEL=+r.value);
- $('go').onclick=()=>{C=Object.assign({lv:LVSEL,thn:DURSEL},LEVELS[LVSEL]);initState()};
+ $('go').onclick=()=>{C=Object.assign({lv:LVSEL,thn:DURSEL,emp:GAME_MODE=='premium'?(app.querySelector('input[name=emp]:checked')||{}).value||'pegawai':'pegawai'},LEVELS[LVSEL]);initState()};
 }
 
 /* ---------- DASHBOARD ---------- */
@@ -214,18 +223,18 @@ function intro(){
  const p=PER,pr=Math.round(C.exp*0.03);
  app.innerHTML=`<section class="hero"><h1>Kenali tokohmu.</h1><p>Sebelum mulai, baca profil tokoh yang akan kamu mainkan. Kondisi kesehatan dan keluarganya memengaruhi seberapa sering biaya medis datang, dan seberapa besar tekanan yang ia rasakan.</p></section>
  <div class="card"><h2>${p.nama}, ${p.umur} tahun</h2><p style="margin-top:10px">${p.cerita}</p>
- <ul class="ledger"><li><span>Keluarga</span><span>${p.fam}</span></li><li><span>Kondisi kesehatan</span><span>${p.sehat}</span></li><li><span>Penghasilan (pokok + side job)</span><span>${fmt(C.gaji+C.side)}</span></li><li><span>Pengeluaran rutin</span><span>${fmt(C.exp)}</span></li><li><span>Kas awal</span><span>${fmt(C.kas)}</span></li><li><span>Dana darurat awal</span><span>${fmt(C.ef)}</span></li></ul>
+ <ul class="ledger"><li><span>Pekerjaan</span><span>${p.pekerjaan||(GAME_MODE=='premium'&&C.emp=='wirausaha'?'Wirausaha':'Pegawai')}</span></li><li><span>Keluarga</span><span>${p.fam}</span></li><li><span>Kondisi kesehatan</span><span>${p.sehat}</span></li><li><span>Penghasilan (pokok + side job)</span><span>${fmt(C.gaji+C.side)}</span></li><li><span>Pengeluaran rutin</span><span>${fmt(C.exp)}</span></li><li><span>Kas awal</span><span>${fmt(C.kas)}</span></li><li><span>Dana darurat awal</span><span>${fmt(C.ef)}</span></li></ul>
  <div class="msg" style="margin-top:14px"><b>Keputusan pertamamu: asuransi kesehatan.</b> Premi ${fmt(pr)} per bulan dan menanggung 80% biaya kejadian medis. Jika mendaftar sekarang, premi dipotong sejak bulan pertama. ${p.saran}</div>
  <div class="row"><button class="btn pri" id="insy">Daftar asuransi dan mulai</button><button class="btn" id="insn">Mulai tanpa asuransi</button></div>
  <p class="sm muted" style="margin-top:10px">Keputusan ini tidak permanen. Kamu bisa mengaktifkan atau menghentikan asuransi kapan saja lewat tab Asuransi.</p></div>`;
  window.scrollTo(0,0);
- const begin=ins=>{S.ins=ins;S.insStart=ins;S.cur=null;app.innerHTML='<div id="dash"></div><div class="stage" id="stage"></div>';$('hb').classList.remove('hide');monthStart()};
+ const begin=ins=>{S.ins=ins;S.insStart=ins;S.insUntil=ins?3:0;S.vehicleIns='';S.cur=null;setModeLock(true);app.innerHTML='<div id="dash"></div><div class="stage" id="stage"></div>';$('hb').classList.remove('hide');monthStart()};
  $('insy').onclick=()=>begin(true);$('insn').onclick=()=>begin(false);
 }
 /* ---------- STRES ---------- */
 function bump(v,why){S.stress=clamp(S.stress+v,0,100);if(S.cur)S.cur.stU.push(why+' (+'+v+')');if($('dash'))dash()}
 function updateStress(){
- const ex=expNow(),cov=S.ef/ex,u=S.cur.stU,d=S.cur.stD,net=S.cur.inc+S.cur.side-S.cur.exp-S.cur.prem,ng=S.com.filter(c=>c.id=='gaya').length;
+ const ex=expNow(),cov=S.ef/ex,u=S.cur.stU,d=S.cur.stD,net=S.cur.inc+S.cur.side-S.cur.exp-S.cur.prem,ng=S.com.filter(c=>c.id=='gaya').length,offerStress=S.com.filter(c=>c.active!==false&&c.stressUntil&&S.m<c.stressUntil).reduce((a,c)=>a+(c.stress||0),0);
  let t=18+PER.base+LVST[C.lv];
  const up=(v,w)=>{t+=v;u.push(w)},dn=(v,w)=>{t-=v;d.push(w)};
  if(S.debt.pinjol>1)up(24,'utang pinjol');
@@ -237,7 +246,10 @@ function updateStress(){
  if(nw()<0)up(8,'aset bersih negatif');
  if(S.ins)dn(3,'ada asuransi kesehatan');else if(PER.hr>=0.4)up(6,'kondisi kesehatan rentan tanpa asuransi');
  if(ng)dn(6*Math.min(ng,2),'gaya hidup yang nyaman');
+ if(offerStress>0)up(offerStress,'dampak tawaran aktif');else if(offerStress<0)dn(-offerStress,'dampak tawaran aktif');
  t=clamp(t,0,100);S.stress=clamp(S.stress+(t-S.stress)*0.4,0,100);
+ const paymentStress=S.com.filter(c=>c.active!==false&&c.monthlyStressUntil&&S.m<c.monthlyStressUntil).reduce((a,c)=>a+(c.monthlyStress||0),0)+(S.debt.kartu>1?S.ccShoppingStress:0);
+ if(paymentStress>0){S.stress=clamp(S.stress+paymentStress,0,100);u.push('beban cicilan belanja (+'+paymentStress+')')}
 }
 function stressLine(){
  const v=Math.round(S.stress),u=S.cur.stU,d=S.cur.stD;
@@ -259,17 +271,19 @@ function invHist(){
 /* ---------- BULAN BERJALAN ---------- */
 function monthStart(){
  S.com.forEach(c=>{if(c.active!==false&&c.until&&S.m>=c.until){S.exAdj-=c.d;c.active=false}});
- const y=Math.floor(S.m/12),fi=Math.pow(1.05,y),sc=S.scn[S.m],income=sc.income||1;
- const inc=C.gaji*fi*S.gajiMul*income,side=C.side*fi*S.sideMul*sc.u*income,base=expBase(),exp=expNow(),prem=S.ins?Math.round(C.exp*0.03):0;
- let intr=0;for(const k in RATE){const i=S.debt[k]*rateOf(k,S.m,S.kSince);S.debt[k]+=i;intr+=i}
+ const y=Math.floor(S.m/12),fi=Math.pow(1.05,y),sc=S.scn[S.m],income=incomeFactor(S.m);
+ const healthPrem=S.ins?Math.round(C.exp*0.03):0,vehiclePrem=GAME_MODE=='premium'&&S.vehicleIns?Math.round(C.exp*(S.vehicleIns=='tlo'?0.005:0.012)):0;
+ const inc=C.gaji*fi*S.gajiMul*income,side=C.side*fi*S.sideMul*(GAME_MODE=='premium'&&C.emp=='pegawai'?1:sc.u)*income,base=expBase(),exp=expNow(),prem=healthPrem+vehiclePrem;
+ let intr=0;for(const k in RATE){const base=k=='kartu'?Math.max(0,S.debt[k]-(S.ccGrace||0)):S.debt[k],i=base*rateOf(k,S.m,S.kSince);S.debt[k]+=i;intr+=i}S.ccGrace=0;
  let zi=0;const gains={},ret={};for(const k in INV){const q=INV[k],r=clamp(sc.z[zi++]*q.sd*C.vm+q.mu,q.lo,q.hi);ret[k]=r;gains[k]=S.iv[k]*r;S.iv[k]+=gains[k];S.px[k].push(S.px[k][S.px[k].length-1]*(1+r))}S.ret=ret;S.ef*=1.002;
  if(S.eqM)S.prop=S.prop*1.004+S.eqM;
  S.cash+=inc+side-exp-prem;
- S.cur={m:S.m,inc,side,exp,prem,intr,gain:Object.values(gains).reduce((a,b)=>a+b,0),gk:gains,ret,stU:[],stD:[],stPrev:S.stress,ev:null,edu:null,dec:[]};
+ S.cur={m:S.m,inc,side,exp,prem,premHealth:healthPrem,premVehicle:vehiclePrem,intr,gain:Object.values(gains).reduce((a,b)=>a+b,0),gk:gains,ret,stU:[],stD:[],stPrev:S.stress,ev:null,edu:null,pointsEarned:0,pointsSpent:0,dec:[]};
  updateStress();
  S.ledger=[['Gaji pokok',inc],['Side job',side],['Pengeluaran rutin',-base]];
  if(Math.abs(exp-base)>0.5)S.ledger.push(['Perubahan pengeluaran dari tawaran',-(exp-base)]);
- if(prem)S.ledger.push(['Premi asuransi kesehatan',-prem]);
+ if(S.ins)S.ledger.push(['Premi asuransi kesehatan',-Math.round(C.exp*0.03)]);
+ if(GAME_MODE=='premium'&&S.vehicleIns)S.ledger.push(['Premi asuransi kendaraan '+S.vehicleIns,-Math.round(C.exp*(S.vehicleIns=='tlo'?0.005:0.012))]);
  if(intr)S.ledger.push(['Bunga dan tanda terima kasih utang',-intr]);
  for(const k in INV)if(S.iv[k]>0.5||Math.abs(gains[k])>0.5)S.ledger.push(['Hasil '+INV[k].n,gains[k]]);
  S.tab='sum';S.msg='';need=null;S.offer=null;dash();
@@ -285,12 +299,14 @@ function eduEvent(){
   openNeed(t,'Biaya pendidikan. '+d+' Pilih cara membayarnya.',amt,true,suddenEvent);
  }else suddenEvent();
 }
-const EVENTS=[['Motor mogok dan harus servis besar',0],['Sakit dan harus berobat ke dokter',1],['Laptop atau HP rusak, tidak bisa diperbaiki',0],['Undangan nikah dan hajatan keluarga',0],['Gigi bermasalah, perlu tindakan',1],['Kulkas atau AC rusak',0],['Biaya mendadak untuk orang tua di kampung',0],['Pipa air rumah bocor dan perlu diperbaiki',0],['Hewan peliharaan perlu perawatan darurat',0]];
+const EVENTS=[['Motor mogok dan harus servis besar',0],['Sakit dan harus berobat ke dokter',1],['Laptop atau HP rusak, tidak bisa diperbaiki',0],['Undangan nikah dan hajatan keluarga',0],['Gigi bermasalah, perlu tindakan',1],['Kulkas atau AC rusak',0],['Biaya mendadak untuk orang tua di kampung',0],['Pipa air rumah bocor dan perlu diperbaiki',0],['Hewan peliharaan perlu perawatan darurat',0],['Tagihan pajak kendaraan',0]];
 function suddenEvent(){
  if(S.scn[S.m].ev){
   const [t,h]=EVENTS[S.scn[S.m].evK];
+  if(GAME_MODE!='premium'&&t.includes('pajak'))return businessEvent();
   let amt=C.sudden*S.scn[S.m].evA,note='';const orig=amt;S.cur.med=h?orig:0;S.cur.save=0;
   if(h&&S.ins){S.cur.save=orig*0.8;amt*=0.2;note=' Asuransi menanggung 80%.'}
+  if(GAME_MODE=='premium'&&t.includes('Motor')&&S.vehicleIns){const cover=S.vehicleIns=='komprehensif'?0.8:0.5;S.cur.vehicleSave=amt*cover;amt*=1-cover;note+=` Asuransi kendaraan ${S.vehicleIns} menanggung ${Math.round(cover*100)}%.`;}
   bump(h?(S.ins?6:10):7,h?'masalah kesehatan'+(S.ins?'':' tanpa asuransi'):'kejadian mendadak');S.kejadian++;S.cur.ev=[t,amt];S.ledger.push([t,-amt]);
   openNeed(t,'Kejadian tak terduga.'+note+' Pilih cara membayarnya.',amt,true,businessEvent);
  }else businessEvent();
@@ -314,13 +330,23 @@ const OFFERS=[
  {id:'gadget',once:1,min:4,make:(e)=>({t:'Membeli gadget terbaru',desc:'Gadget baru membuat aktivitas harian terasa lebih nyaman, tetapi menguras kas.',up:r5(e*0.80),parts:[],stress:-10,note:'Tingkat stres turun 10 poin saat tawaran diterima.'})},
  {id:'pulsa',once:1,min:3,make:(e)=>({t:'Paket pulsa setahun dibayar di awal',desc:'Bayar paket pulsa untuk setahun sekaligus dengan biaya bulanan yang lebih hemat.',up:r5(e*0.12),parts:[['Penghematan paket pulsa selama 12 bulan',-r5(e*0.015)]],duration:12,note:'Penghematan berlaku selama 12 bulan.'})},
  {id:'gaya',make:(e)=>{return{t:'Naik gaya hidup: makan di luar dan hiburan rutin',desc:'Tidak ada keuntungan finansial, tapi bisa meredakan stres.',up:0,parts:[['Makan di luar dan hiburan',r5(e*0.06)]],stress:-20,note:'Tingkat stresmu turun 20 poin sekarang, dan stres jangka panjangmu ikut lebih rendah selama komitmen ini berjalan. Harganya: pengeluaran rutin naik setiap bulan.'}}},
+ {id:'kopi',make:(e)=>({t:'Langganan kopi harian',desc:'Menambahkan anggaran rutin untuk membeli kopi setiap hari.',up:0,parts:[['Pengeluaran kopi rutin',r5(e*0.02)]],stress:0,note:'Pengeluaran kopi menambah biaya rutin setiap bulan selama sisa permainan.'})},
+ {id:'makananFancy',make:(e)=>({t:'Makanan fancy setiap bulan',desc:'Menambahkan anggaran rutin untuk menikmati makanan yang lebih mewah setiap bulan.',up:0,parts:[['Pengeluaran makanan fancy',r5(e*0.08)]],stress:0,note:'Pengeluaran makanan fancy menambah biaya rutin setiap bulan selama sisa permainan.'})},
+ {id:'branded',once:1,min:2,make:(e)=>({t:'Beli barang branded',desc:'Membeli barang bermerek yang sudah lama kamu inginkan. Biaya dibayar sekali; rasa puasnya membantu hanya dalam waktu singkat.',up:r5(e*0.35),parts:[],duration:1,stress:8,note:'Efek stres hanya berlangsung selama bulan ini; pembelian tidak menambah pengeluaran rutin.'})},
+ {id:'cicilanbranded',once:1,min:3,make:(e)=>({t:'Paket belanja branded tiga bulan',desc:'Belanja barang bermerek dengan skema cicilan pendek. Pembelian memberi rasa puas sekarang, sementara kewajiban cicilan menambah tekanan sampai lunas.',up:0,parts:[['Cicilan barang branded (3 bulan)',r5(e*0.08)]],duration:3,stress:-5,monthlyStress:5,note:'Stres turun 5 poin pada bulan pembelian. Mulai bulan berikutnya, cicilan menambah 5 poin stres per bulan selama 3 bulan.'})},
+ {id:'liburan',once:1,min:3,make:(e)=>({t:'Paket liburan singkat tiga bulan',desc:'Bayar paket rekreasi bertahap. Pengalaman ini membantu melepas penat, tetapi menambah pengeluaran sementara.',up:0,parts:[['Paket rekreasi (3 bulan)',r5(e*0.035)]],duration:3,stress:-7,note:'Pengeluaran tambahan dan penurunan stres berlaku selama 3 bulan.'})},
+ {id:'cicilcc',min:4,make:(e)=>{const price=r5(e*0.30);return{t:'Belanja dengan kartu kredit + poin',desc:'Belanja barang kebutuhan senilai '+fmt(price)+' dengan kartu kredit. Tagihan jatuh tempo bulan berikutnya; tidak ada biaya tambahan jika dilunasi penuh. Jika masih tersisa, bunga 2,5% per bulan mulai bulan berikutnya.',up:0,parts:[],creditAmount:price,stress:-5,creditStress:5,points:Math.floor(price/10000),note:'Stres turun 5 poin pada bulan belanja. Selama saldo kartu belum lunas, tagihan menambah 5 poin stres per bulan. Mendapat 1 poin setiap Rp10.000 transaksi.'}}},
  {id:'kursus',once:1,min:3,make:()=>({t:'Kursus sertifikasi keahlian',desc:'Biaya pendidikan sekali bayar untuk meningkatkan penghasilan pokok.',up:r5(C.gaji*0.4),parts:[],chance:0.75,gajiMul:1.10,note:'Peluang lulus 75%. Jika lulus, gaji pokok naik 10% mulai bulan depan. Jika gagal, biaya hangus.'})}
 ];
 function drawOffer(m,com,last){
  const sc=S.scn[m];if(!sc.of||m<2)return null;
  const o=OFFERS[Math.floor(sc.oR*OFFERS.length)];
  if(m<(o.min||2)||(o.once&&com.some(c=>c.id==o.id))||(o.grp&&com.some(c=>c.grp==o.grp))||(last[o.id]!=null&&m-last[o.id]<6))return null;
- last[o.id]=m;return Object.assign({id:o.id,grp:o.grp},o.make(C.exp*Math.pow(1.04,Math.floor(m/12))));
+ last[o.id]=m;const offer=Object.assign({id:o.id,grp:o.grp},o.make(C.exp*Math.pow(1.04,Math.floor(m/12))));
+ const stressDefaults={kpr:7,murah:-3,dekat:-3,bundle:-2,tagihan:-3,pulsa:-2,kursus:5};
+ if(offer.stress==null)offer.stress=stressDefaults[offer.id]||4;
+ if(!offer.duration)offer.stressDuration=1;
+ return offer;
 }
 function pickOffer(){return drawOffer(S.m,S.com,S.offLast)}
 function offerStep(){S.offer=pickOffer();afterEvents()}
@@ -329,7 +355,7 @@ function offerHTML(o){
  const d=dSum(o),sg=v=>(v>=0?'+':'')+fmt(v);
  let adv='';
  if(C.lv=='mudah'){
-  const fi=Math.pow(1.05,Math.floor(S.m/12)),income=S.scn[S.m].income||1,after=(C.gaji*fi*S.gajiMul+C.side*fi*S.sideMul*(o.sideMul||1)*0.8)*income-(expNow()+d)-(S.ins?C.exp*0.03:0),ok=[];
+  const fi=Math.pow(1.05,Math.floor(S.m/12)),income=incomeFactor(S.m),after=(C.gaji*fi*S.gajiMul+C.side*fi*S.sideMul*(o.sideMul||1)*0.8)*income-(expNow()+d)-(S.ins?C.exp*0.03:0),ok=[];
   ok.push('Perkiraan arus kas rutin setelah tawaran: <b>'+fmt(after)+'</b> per bulan.');
   if(after<0)ok.push('Kamu akan defisit tiap bulan. Sebaiknya tolak.');
   if(o.stress)ok.push('Tingkat stresmu sekarang '+Math.round(S.stress)+' dari 100. Tawaran ini '+(o.stress<0?'menurunkan':'menaikkan')+' stres '+Math.abs(o.stress)+' poin.');
@@ -340,7 +366,7 @@ function offerHTML(o){
  return `<div class="alert" style="border-left-color:var(--acc)"><span class="tag" style="background:var(--acc);color:var(--acc-ink)">Tawaran baru</span><h3 style="margin-top:8px">${o.t}</h3><p class="muted sm" style="margin:4px 0 8px">${o.desc}</p>
  <ul class="ledger">${o.parts.map(p=>`<li><span>${p[0]}</span><span class="${p[1]>0?'neg':'pos'}">${sg(p[1])}</span></li>`).join('')}
  ${o.parts.length?`<li><b>Perubahan pengeluaran per bulan</b><b class="${d>0?'neg':'pos'}">${sg(d)}</b></li>`:''}
- <li><span>Biaya awal (dari kas)</span><span class="${o.up?'neg':''}">${fmt(o.up)}</span></li>${o.stress?`<li><span>Efek tingkat stres</span><span class="${o.stress<0?'pos':'neg'}">${o.stress<0?'turun':'naik'} ${Math.abs(o.stress)} poin</span></li>`:''}${o.duration?`<li><span>Lama penghematan</span><span>${o.duration} bulan</span></li>`:''}${o.eq?`<li><span>Ekuitas rumah bertambah per bulan</span><span class="pos">+${fmt(o.eq)}</span></li>`:''}</ul>
+ ${o.creditAmount?`<li><span>Tagihan kartu kredit</span><span class="neg">${fmt(o.creditAmount)} · jatuh tempo bulan depan</span></li>`:''}<li><span>Biaya awal (dari kas)</span><span class="${o.up?'neg':''}">${fmt(o.up)}</span></li><li><span>Efek stres bulan ini</span><span class="${o.stress<0?'pos':'neg'}">${o.stress<0?'turun':'naik'} ${Math.abs(o.stress)} poin</span></li>${o.monthlyStress?`<li><span>Beban stres cicilan mulai bulan depan</span><span class="neg">naik ${o.monthlyStress} poin/bulan selama ${o.duration} bulan</span></li>`:''}${o.creditStress?`<li><span>Beban stres tagihan kartu</span><span class="neg">naik ${o.creditStress} poin/bulan sampai saldo lunas</span></li>`:''}${o.duration?`<li><span>Lama pengeluaran/efek</span><span>${o.duration} bulan</span></li>`:''}${o.eq?`<li><span>Ekuitas rumah bertambah per bulan</span><span class="pos">+${fmt(o.eq)}</span></li>`:''}${o.points?`<li><span>Benefit poin kartu kredit</span><span class="pos">+${o.points.toLocaleString('id-ID')} poin</span></li>`:''}</ul>
  ${o.note?`<p class="sm muted" style="margin-top:8px">${o.note}</p>`:''}${adv}
  <div class="row"><button class="btn pri" data-act="offyes">Terima</button><button class="btn" data-act="offno">Tolak</button></div>
  <p class="sm muted" style="margin-top:8px">Tawaran hanya berlaku sampai akhir bulan ini.</p></div>`;
@@ -348,9 +374,10 @@ function offerHTML(o){
 function commitHTML(){
  return `<h3 style="margin-top:18px">Komitmen aktif</h3>`+(S.com.some(c=>c.active!==false)?`<ul class="ledger">${S.com.filter(c=>c.active!==false).map(c=>`<li><span>${c.t}</span><span class="${c.d>0?'neg':'pos'}">${c.d?(c.d>0?'+':'')+fmt(c.d)+' per bulan':'sekali bayar'}${c.until?' ('+(c.until-S.m-1)+' bulan tersisa)':''}</span></li>`).join('')}</ul>`:'<p class="sm muted">Belum ada.</p>')+(S.prop>0?`<p class="sm" style="margin-top:8px">Ekuitas rumah: <b>${fmt(S.prop)}</b> (ikut dihitung sebagai aset bersih)</p>`:'');
 }
+function pointsHTML(){return `<div class="msg" style="margin-top:14px"><b>Poin kartu kredit:</b> ${S.points.toLocaleString('id-ID')} poin tersedia. Tukarkan 100 poin untuk voucher relaksasi yang menurunkan stres 5 poin.<div style="margin-top:8px"><button class="btn pri" data-act="redeemPoints" ${S.points<100?'disabled':''}>Tukar 100 poin · −5 stres</button></div>${S.pointsSpent?`<p class="sm muted" style="margin-top:6px">Sudah ditukar: ${S.pointsSpent.toLocaleString('id-ID')} poin.</p>`:''}</div>`}
 function offerValue(o,m=S.m){
  const rem=Math.max(0,C.thn*12-m-1),d=dSum(o),fi=Math.pow(1.05,Math.floor(m/12));
- const months=o.duration?Math.min(rem,o.duration):rem;let v=-d*months;
+ const months=o.duration?Math.min(rem,o.duration):rem;let v=-d*months-(o.creditAmount||0);
  if(o.id=='kpr')v+=o.eq*rem+0.004*(o.up+o.eq*rem/2)*rem;else v-=o.up;
  if(o.sideMul)v+=C.side*fi*0.8*(o.sideMul-1)*rem;
  if(o.chance!=null)v+=o.chance*C.gaji*fi*(o.gajiMul-1)*rem;
@@ -359,13 +386,16 @@ function offerValue(o,m=S.m){
 function logSkip(o,res){S.offLog.push({m:S.m,id:o.id,t:o.t,res,d:dSum(o),up:o.up,val:offerValue(o),cov:S.ef/expNow(),cash:S.cash,e:expNow(),st:S.stress})}
 function takeOffer(){
  const o=S.offer;if(!o)return;
+ if(o.creditAmount&&o.creditAmount>capFor(S,'kartu')){S.msg='Limit kartu kredit tidak cukup untuk transaksi ini.';return render()}
  if(o.up>S.cash){S.msg='Kas belum cukup untuk biaya awal '+fmt(o.up)+'. Pindahkan dana ke tabungan lewat tab lain, lalu coba lagi.';return render()}
  const val=offerValue(o),cov0=S.ef/expNow(),cashAfter=S.cash-o.up,e0=expNow();let lulus=null;S.cash-=o.up;const d=dSum(o);S.exAdj+=d;let m='Menerima tawaran: '+o.t+'.';
  if(o.id=='kpr'){S.prop+=o.up;S.eqM+=o.eq}
  if(o.sideMul)S.sideMul*=o.sideMul;
  if(o.chance!=null){if(lulus=S.scn[S.m].oL<o.chance){S.gajiMul*=o.gajiMul;m+=' Lulus! Gaji pokok naik 10% mulai bulan depan.'}else m+=' Belum lulus, biaya hangus.'}
- S.offLog.push({m:S.m,id:o.id,t:o.t,res:'terima',d,up:o.up,val,cov:cov0,cash:cashAfter,e:e0,lulus,st:S.stress});
- S.com.push({id:o.id,grp:o.grp,t:o.t,d,until:o.duration?S.m+o.duration+1:null,active:true});S.offer=null;
+  if(o.creditAmount){S.debt.kartu+=o.creditAmount;S.ccGrace+=o.creditAmount;S.ccShoppingStress=Math.max(S.ccShoppingStress,o.creditStress||0);m+=` Tagihan ${fmt(o.creditAmount)} jatuh tempo bulan depan.`}
+ if(o.points){S.points+=o.points;S.pointsEarned+=o.points;S.cur.pointsEarned+=o.points;m+=` Kamu mendapat ${o.points.toLocaleString('id-ID')} poin kartu kredit.`}
+ S.offLog.push({m:S.m,id:o.id,t:o.t,res:'terima',d,up:o.up,val,cov:cov0,cash:cashAfter,e:e0,lulus,st:S.stress,points:o.points||0});
+ S.com.push({id:o.id,grp:o.grp,t:o.t,d,stress:o.monthlyStress==null?(o.duration?o.stress||0:0):0,stressUntil:S.m+(o.duration||1),monthlyStress:o.monthlyStress||0,monthlyStressUntil:o.monthlyStress&&o.duration?S.m+o.duration+1:0,until:o.duration?S.m+o.duration+1:null,active:true});S.offer=null;
  if(o.stress){S.stress=clamp(S.stress+o.stress,0,100);(o.stress<0?S.cur.stD:S.cur.stU).push(o.t+' ('+(o.stress>0?'+':'')+o.stress+')');m+=' Tingkat stres '+(o.stress<0?'turun ':'naik ')+Math.abs(o.stress)+' poin.'}
  S.cur.dec.push(m+' Biaya awal '+fmt(o.up)+(d?', perubahan pengeluaran '+(d>0?'+':'')+fmt(d)+' per bulan':'')+'.');
  S.msg=m;dash();render();
@@ -376,7 +406,7 @@ function declineOffer(){logSkip(S.offer,'tolak');S.cur.dec.push('Menolak tawaran
 function openNeed(title,desc,amt,fromEvent,next){
  if(!S.cur.pre)S.cur.pre={cash:S.cash,ef:S.ef,inv:invT()};
  need={title,desc,rem:amt,total:amt,next};
- if(forceIfStuck()){const n=need.next;need=null;S.tab='sum';return n()}
+ if(!title.toLowerCase().includes('pajak')&&forceIfStuck()){const n=need.next;need=null;S.tab='sum';return n()}
  S.tab='need';render();
 }
 function caps(){return{k:capFor(S,'keluarga'),c:capFor(S,'kartu'),p:capFor(S,'pinjol')}}
@@ -394,10 +424,11 @@ function needHTML(){
  ['pinjol','Pinjol','Cair cepat, plafon besar (10× gaji). Bunga 9% per bulan + admin 10%',cp.p,'Bunga 9%/bln','r']];
  return `<div class="alert"><h3>${need.title}</h3><p class="muted sm" style="margin:4px 0 8px">${need.desc}</p>
  <div class="muted sm">Masih perlu ditutup</div><div class="amt">${fmt(r)}</div></div>
- ${C.lv=='mudah'?'<div class="msg" style="margin-top:12px">Panduan: pakai dana darurat lebih dulu, karena memang untuk ini. Kalau kurang, lanjutkan dengan kas atau jual Surat Utang. Pinjam keluarga paling murah (1% per bulan), tapi lunasi sebelum 6 bulan agar tidak naik jadi 2%. Hindari pinjol dan kartu kredit karena bunganya sangat tinggi.</div>':''}<div class="opts">${o.map(([k,t,d,a,tg,c])=>`<button class="opt" data-s="${k}" ${a<1?'disabled':''}><span><b>${t}</b><span class="sm muted">${d}</span></span><span class="tag ${c}">${tg}</span></button>`).join('')}</div>`;
+ ${C.lv=='mudah'?'<div class="msg" style="margin-top:12px">Panduan: pakai dana darurat lebih dulu, karena memang untuk ini. Kalau kurang, lanjutkan dengan kas atau jual Surat Utang. Pinjam keluarga paling murah (1% per bulan), tapi lunasi sebelum 6 bulan agar tidak naik jadi 2%. Hindari pinjol dan kartu kredit karena bunganya sangat tinggi.</div>':''}${need.title.toLowerCase().includes('pajak')?`<div class="opts"><button class="opt" data-s="tax"><span><b>Catat sebagai utang pajak</b><span class="sm muted">Tagihan tetap tercatat sebagai kewajiban dan muncul di rekap akhir.</span></span><span class="tag r">${fmt(r)}</span></button></div>`:''}<div class="opts">${o.map(([k,t,d,a,tg,c])=>`<button class="opt" data-s="${k}" ${a<1?'disabled':''}><span><b>${t}</b><span class="sm muted">${d}</span></span><span class="tag ${c}">${tg}</span></button>`).join('')}</div>`;
 }
 function fund(k){
  const r=need.rem,cp=caps();let t=0;
+ if(k=='tax'){S.taxDebt=(S.taxDebt||0)+r;S.cur.taxDeferred=(S.cur.taxDeferred||0)+r;S.cur.dec.push('Tagihan pajak '+fmt(r)+' dicatat sebagai utang pajak.');need.rem=0;dash();const n=need.next;need=null;S.tab='sum';return n()}
  if(k=='cash'){t=Math.min(S.cash,r);S.cash-=t}
  else if(k=='ef'){t=Math.min(S.ef,r);S.ef-=t}
  else if(INV[k]){const f=1-INV[k].fee;t=Math.min(S.iv[k]*f,r);S.iv[k]-=t/f;S.rugi+=t/f-t}
@@ -424,7 +455,7 @@ function tabHTML(){
  if(t=='sum')return `<h2>Ringkasan bulan ini</h2>${S.offer?'<div class="msg">Ada tawaran baru: '+S.offer.t+'. Buka tab Tawaran.</div>':''}<ul class="ledger">${S.ledger.map(([x,v])=>`<li><span>${x}</span><span class="${v>=0?'pos':'neg'}">${v>=0?'+':''}${fmt(v)}</span></li>`).join('')}</ul>
  ${netLine()}${stressLine()}${adviceHTML()}
  <p class="sm muted" style="margin-top:10px">Pilih tab di atas untuk mengisi atau mengambil dana. Tekan Akhiri bulan jika sudah selesai.</p>`;
- if(t=='off')return `<h2>Tawaran</h2><p class="muted sm">Tawaran muncul acak dan mengubah pengeluaran rutinmu. Timbang untung ruginya.</p>${S.offer?offerHTML(S.offer):'<p style="margin-top:12px">Tidak ada tawaran bulan ini.</p>'}${commitHTML()}`;
+ if(t=='off')return `<h2>Tawaran</h2><p class="muted sm">Tawaran muncul acak dan dapat mengubah kondisi keuanganmu. Timbang untung ruginya.</p>${S.offer?offerHTML(S.offer):'<p style="margin-top:12px">Tidak ada tawaran bulan ini.</p>'}${pointsHTML()}${commitHTML()}`;
  if(t=='kas')return `<h2>Tabungan (kas)</h2><p class="muted sm">Uang yang siap pakai. Tidak ada bunga dan nilainya terkikis inflasi.</p>
  <div class="big2" style="margin:10px 0">${fmt(S.cash)}</div>
  <ul class="ledger"><li><span>Pengeluaran rutin bulan ini</span><span>${fmt(ex)}</span></li><li><span>Kas ideal (1 bulan pengeluaran)</span><span>${fmt(ex)}</span></li>
@@ -436,9 +467,12 @@ function tabHTML(){
  if(t=='inv')return `<h2>Investasi</h2><p class="muted sm">Dibeli dari tabungan. Menjual dikenai biaya, dan harga bisa sedang turun.</p>${invHist()}`+
  Object.keys(INV).map(k=>xrow(k,INV[k].n,INV[k].d+' · biaya jual '+Math.round(INV[k].fee*100)+'% · bulan lalu '+fpc(S.ret[k]),fmt(S.iv[k]),[['Seperempat kas',S.cash/4],['Maks kas',S.cash],['Jual semua',S.iv[k]*(1-INV[k].fee)]],[['buy','Beli','pri'],['sell','Jual']])).join('');
  if(t=='debt')return `<h2>Utang</h2><p class="muted sm">Bayar dari tabungan, mulai dari bunga tertinggi. Pinjam hanya jika benar-benar perlu.</p>`+
- Object.keys(RATE).map(k=>{const c=capOf(k);return xrow(k,NAMA[k],DDESC[k]+' · sisa plafon '+fmt(c)+(k=='keluarga'&&S.kSince!=null?' · sudah '+(S.m-S.kSince)+' bulan':''),fmt(S.debt[k]),[['Lunasi',S.debt[k]],['Maks kas',S.cash]],[['pay','Bayar','pri'],['borrow','Pinjam']])}).join('');
- if(t=='ins'){const p=Math.round(C.exp*0.03);return `<h2>Asuransi kesehatan</h2><p class="muted sm">Premi ${fmt(p)} per bulan dipotong otomatis. Menanggung 80% biaya kejadian medis. Berlaku mulai bulan berikutnya.</p><div class="msg" style="margin-top:10px"><b>Profil kesehatanmu:</b> ${PER.sehat}. ${PER.saran}</div>
- <div class="big2" style="margin:12px 0">${S.ins?'Aktif':'Tidak aktif'}</div><button class="btn ${S.ins?'':'pri'}" data-act="ins">${S.ins?'Berhenti berlangganan':'Aktifkan asuransi'}</button>`}
+ Object.keys(RATE).map(k=>{const c=capOf(k);return xrow(k,NAMA[k],DDESC[k]+' · sisa plafon '+fmt(c)+(k=='keluarga'&&S.kSince!=null?' · sudah '+(S.m-S.kSince)+' bulan':''),fmt(S.debt[k]),[['Lunasi',S.debt[k]],['Maks kas',S.cash]],[['pay','Bayar','pri'],['borrow','Pinjam']])}).join('')+
+ (S.taxDebt>0?xrow('pajak','Utang pajak','Tagihan pajak yang belum dibayar. Tidak dikenai bunga dalam simulasi.',fmt(S.taxDebt),[['Lunasi',S.taxDebt],['Maks kas',S.cash]],[['pay','Bayar','pri']]):'');
+ if(t=='ins'){const p=Math.round(C.exp*0.03),healthLocked=S.ins&&S.m<S.insUntil,vehicleLocked=!!S.vehicleIns&&S.m<S.vehicleUntil;return `<h2>Asuransi</h2><div class="grid" style="margin-top:14px;align-items:start">
+ <section class="card"><h3>Asuransi kesehatan</h3><p class="muted sm" style="margin-top:8px">Premi ${fmt(p)} per bulan. Menanggung 80% biaya kejadian medis. Komitmen minimum 3 bulan.</p><div class="msg" style="margin-top:12px"><b>Profil kesehatanmu:</b> ${PER.sehat}. ${PER.saran}</div><div class="big2" style="margin:12px 0">${S.ins?'Aktif':'Tidak aktif'}</div>${healthLocked?`<p class="sm muted" style="margin:0 0 10px">Komitmen minimum berlaku sampai akhir bulan ${S.insUntil}. Kamu dapat mengubah status setelahnya.</p>`:''}<button class="btn ${S.ins?'':'pri'}" data-act="ins" ${healthLocked?'disabled':''}>${S.ins?(healthLocked?'Aktif · komitmen berjalan':'Berhenti berlangganan'):'Aktifkan asuransi'}</button></section>
+ ${GAME_MODE=='premium'?`<section class="card"><h3>Asuransi kendaraan</h3><p class="muted sm" style="margin-top:8px">Pilih perlindungan kendaraan. Komitmen minimum 3 bulan sejak diaktifkan.</p><ul class="ledger"><li><span>TLO · perlindungan 50%</span><span>${fmt(Math.round(C.exp*.005))}/bln</span></li><li><span>Komprehensif · perlindungan 80%</span><span>${fmt(Math.round(C.exp*.012))}/bln</span></li></ul><div class="big2" style="margin:12px 0">${S.vehicleIns?S.vehicleIns:'Tidak aktif'}</div>${vehicleLocked?`<p class="sm muted" style="margin:0 0 10px">Komitmen minimum berlaku sampai akhir bulan ${S.vehicleUntil}. Paket dapat diubah setelahnya.</p>`:''}<div class="opts" style="grid-template-columns:1fr"><button class="btn ${S.vehicleIns=='tlo'?'pri':''}" data-act="vehicleTlo" ${vehicleLocked||S.vehicleIns=='tlo'?'disabled':''}>${S.vehicleIns=='tlo'?'TLO aktif':`Aktifkan TLO · ${fmt(Math.round(C.exp*.005))}/bln`}</button><button class="btn ${S.vehicleIns=='komprehensif'?'pri':''}" data-act="vehicleComprehensive" ${vehicleLocked||S.vehicleIns=='komprehensif'?'disabled':''}>${S.vehicleIns=='komprehensif'?'Komprehensif aktif':`Aktifkan Komprehensif · ${fmt(Math.round(C.exp*.012))}/bln`}</button><button class="btn" data-act="vehicleNone" ${!S.vehicleIns||vehicleLocked?'disabled':''}>Nonaktifkan asuransi kendaraan</button></div></section>`:''}
+ </div>`}
 }
 function netLine(){const n=S.cur.inc+S.cur.side-S.cur.exp-S.cur.prem;return `<p class="sm" style="margin-top:10px">Arus kas rutin bulan ini: <b class="${n>=0?'pos':'neg'}">${n>=0?'+':''}${fmt(n)}</b> (pemasukan dikurangi pengeluaran rutin)</p>`}
 function guide(){
@@ -486,13 +520,15 @@ function afterEvents(){need=null;S.tab=S.offer?'off':'sum';dash();render()}
 function act(a,k){
  if(a=='offyes')return takeOffer();if(a=='offno')return declineOffer();
  const el=$('amt_'+k),x=parseN(el&&el.value);let m='';
- if(a=='ins'){S.ins=!S.ins;S.msg=S.ins?'Asuransi aktif mulai bulan depan.':'Asuransi dihentikan.';S.cur.dec.push(S.msg);return render()}
+ if(a=='redeemPoints'){if(S.points<100){S.msg='Butuh 100 poin untuk menukar voucher relaksasi.';return render()}S.points-=100;S.pointsSpent+=100;S.cur.pointsSpent+=100;S.stress=clamp(S.stress-5,0,100);S.cur.stD.push('voucher relaksasi dari poin kartu kredit (−5)');S.msg='Voucher relaksasi ditukar. Tingkat stres turun 5 poin.';S.cur.dec.push(S.msg);dash();return render()}
+ if(a=='vehicleNone'||a=='vehicleTlo'||a=='vehicleComprehensive'){if(S.vehicleIns&&S.m<S.vehicleUntil){S.msg='Asuransi kendaraan terikat komitmen minimum 3 bulan.';return render()}const next=a=='vehicleNone'?'':a=='vehicleTlo'?'tlo':'komprehensif';if(next==S.vehicleIns)return render();S.vehicleIns=next;S.vehicleUntil=S.vehicleIns?S.m+4:0;S.msg=S.vehicleIns?'Asuransi kendaraan '+S.vehicleIns+' aktif mulai bulan depan dengan komitmen minimum 3 bulan.':'Asuransi kendaraan dihentikan.';if(S.cur)S.cur.dec.push(S.msg);return render()}
+ if(a=='ins'){if(S.ins&&S.m<S.insUntil){S.msg='Asuransi kesehatan terikat komitmen minimum 3 bulan.';return render()}S.ins=!S.ins;S.insUntil=S.ins?S.m+4:0;S.msg=S.ins?'Asuransi kesehatan aktif mulai bulan depan dengan komitmen minimum 3 bulan.':'Asuransi kesehatan dihentikan.';S.cur.dec.push(S.msg);return render()}
  if(!x){S.msg='Isi jumlah dulu.';return render()}
  if(a=='efin'){const v=Math.min(x,S.cash);S.cash-=v;S.ef+=v;m='Disetor '+fmt(v)+' ke dana darurat.'}
  else if(a=='efout'){const v=Math.min(x,S.ef);S.ef-=v;S.cash+=v;m='Ditarik '+fmt(v)+' ke tabungan.'}
  else if(a=='buy'){const v=Math.min(x,S.cash);S.cash-=v;S.iv[k]+=v;S.buys.push({m:S.m,v,ok:S.ef>=expNow()*3});m='Membeli '+INV[k].n+' senilai '+fmt(v)+'.'}
  else if(a=='sell'){const f=1-INV[k].fee,n=Math.min(x,S.iv[k]*f);S.iv[k]-=n/f;S.cash+=n;S.rugi+=n/f-n;m='Menjual '+INV[k].n+', diterima '+fmt(n)+' setelah biaya.'}
- else if(a=='pay'){const v=Math.min(x,S.cash,S.debt[k]);S.cash-=v;S.debt[k]-=v;if(k=='keluarga'&&S.debt.keluarga<1)S.kSince=null;m='Membayar '+fmt(v)+' ke '+NAMA[k]+'.'}
+ else if(a=='pay'){const due=k=='pajak'?S.taxDebt:S.debt[k],v=Math.min(x,S.cash,due);S.cash-=v;if(k=='pajak')S.taxDebt-=v;else S.debt[k]-=v;if(k=='keluarga'&&S.debt.keluarga<1)S.kSince=null;if(k=='kartu'&&S.debt.kartu<1)S.ccShoppingStress=0;m='Membayar '+fmt(v)+' ke '+NAMA[k]+'.'}
  else if(a=='borrow'){const v=Math.min(x,capOf(k));if(v<1){S.msg='Plafon habis.';return render()}if(k=='keluarga'&&S.debt.keluarga<1)S.kSince=S.m;S.cash+=v;S.debt[k]+=k=='pinjol'?v*1.1:v;if(k=='pinjol'){S.pinjolN++;S.adm+=v*0.1}S.cur.bor=1;m='Meminjam '+fmt(v)+' dari '+NAMA[k]+'.'}
  S.cur.dec.push(m);S.msg=m+guideMsg(a,k);dash();render();
 }
@@ -540,6 +576,7 @@ function insightHTML(){
  if(idle>1)I.push(['Uang menganggur',`Kas yang melebihi 2 bulan pengeluaran dibiarkan menganggur. Jika ditaruh di Surat Utang, perkiraan tambahan hasilnya sekitar ${fmt(idle)}.`]);
  I.push(['Investasi',`Total hasil investasi ${sg(gain)}. Posisi akhir: Surat Utang ${fmt(S.iv.su)}, Reksa Dana ${fmt(S.iv.rd)}, Saham ${fmt(S.iv.sh)}. ${invT()<=0?'Kamu tidak menaruh uang di investasi sama sekali.':S.iv.sh>invT()*0.6?'Porsi saham besar, jadi hasilmu sensitif terhadap pasar.':'Porsinya cukup tersebar.'}`]);
  I.push(['Utang',intr>0||borM?`Kamu berutang di ${borM} bulan dan membayar bunga total ${fmt(intr)}. ${S.pinjolN?'Pinjol dipakai '+S.pinjolN+' kali, ini pos terbesar yang bisa dihindari.':'Kamu menghindari pinjol, bagus.'}`:'Kamu tidak pernah berutang. Disiplin yang bagus.']);
+ if(S.pointsEarned)I.push(['Poin kartu kredit',`Kamu mendapat ${S.pointsEarned.toLocaleString('id-ID')} poin dan menukar ${S.pointsSpent.toLocaleString('id-ID')} poin. Sisa ${S.points.toLocaleString('id-ID')} poin dapat ditukar: 100 poin menurunkan stres 5 poin.`]);
  I.push(['Biaya tak terduga',`Kejadian mendadak atau kerugian usaha ${eventN} kali (${fmt(ev)}) dan biaya pendidikan ${S.eduN} kali (${fmt(edu)}), total ${(((ev+edu)/inc)*100).toFixed(0)}% dari pemasukan.${defM?' Ada '+defM+' bulan di mana pengeluaran rutin saja sudah melebihi kasmu.':''}`]);
  const stv=R.map(r=>r.st),avS=stv.reduce((a,b)=>a+b,0)/n,pk=stv.indexOf(Math.max(...stv)),hiN=stv.filter(v=>v>=75).length,medN=R.filter(r=>r.med>0).length,medT=tot(r=>r.med||0),svd=tot(r=>r.save||0),pd=tot(r=>r.prem||0);
  I.push(['Profil dan asuransi',`Tokohmu ${PER.nama}: ${PER.sehat.toLowerCase()}. Kejadian medis ${medN} kali dengan biaya penuh ${fmt(medT)}. ${pd>0?'Asuransi menghemat '+fmt(svd)+' dan premi yang dibayar '+fmt(pd)+'.':'Kamu tidak memakai asuransi, jadi seluruh biaya medis ditanggung sendiri.'}`]);
@@ -554,7 +591,7 @@ function insightHTML(){
 
 /* ---------- STRATEGI TERBAIK ---------- */
 function genScn(){
- const A=[];for(let m=0;m<C.thn*12;m++){const hl=Math.random()<PER.hr,evK=hl?HI[Math.floor(Math.random()*HI.length)]:NI[Math.floor(Math.random()*NI.length)];A.push({u:rnd(0.4,1.2),income:PER.income?rnd(PER.income[0],PER.income[1]):1,biz:PER.bizRisk?Math.random()<PER.bizRisk:false,bizLoss:rnd(0.5,1),z:[norm(),norm(),norm()],ev:Math.random()*100<C.prob,evK,evA:rnd(0.5,1.6)*(hl?PER.med:1),ed:Math.random()<C.edu,edK:Math.floor(Math.random()*EDU.length),edA:rnd(0.7,1.3),of:Math.random()<C.off,oR:Math.random(),oL:Math.random()})}
+ const A=[];for(let m=0;m<C.thn*12;m++){const hl=Math.random()<PER.hr,evK=GAME_MODE=='premium'&&Math.random()<0.06?9:(hl?HI[Math.floor(Math.random()*HI.length)]:NI[Math.floor(Math.random()*NI.length)]);A.push({u:rnd(0.4,1.2),income:PER.income?rnd(PER.income[0],PER.income[1]):1,biz:Math.random()<(GAME_MODE=='premium'&&C.emp=='wirausaha'?Math.max(PER.bizRisk||0,0.10):(PER.bizRisk||0)),bizLoss:rnd(0.5,1),z:[norm(),norm(),norm()],ev:Math.random()*100<C.prob,evK,evA:rnd(0.5,1.6)*(hl?PER.med:1),ed:Math.random()<C.edu,edK:Math.floor(Math.random()*EDU.length),edA:rnd(0.7,1.3),of:Math.random()<C.off,oR:Math.random(),oL:Math.random()})}
  return A;
 }
 const ORD1=['cash','ef','su','keluarga','rd','sh','kartu','pinjol'],ORD2=['cash','ef','keluarga','su','rd','kartu','sh','pinjol'];
@@ -562,57 +599,98 @@ const ALLOCS=[null,{su:1},{su:.5,rd:.5},{rd:1},{su:.3,rd:.4,sh:.3},{rd:.5,sh:.5}
 const PAS={order:['cash','ef','keluarga','kartu','pinjol'],efT:0,buf:0,ins:false,pay:false,alloc:null,offer:'never'};
 const PD={order:ORD1,efT:6,buf:1,ins:true,pay:true,alloc:{su:.3,rd:.4,sh:.3},offer:'smart'};
 function simulate(P){
- const T=C.thn*12,x={cash:C.kas,ef:C.ef,iv:{su:0,rd:0,sh:0},debt:{keluarga:0,kartu:0,pinjol:0},ins:!!(P.ins&&S.insStart),exAdj:0,gajiMul:1,sideMul:1,prop:0,eqM:0,com:[],last:{},kSince:null};
- const nwx=()=>x.cash+x.ef+x.iv.su+x.iv.rd+x.iv.sh+x.prop-x.debt.keluarga-x.debt.kartu-x.debt.pinjol;
- const H=[nwx()],st={intr:0,adm:0,gain:0,pinjol:0,borM:0,low:0,neg:0,acc:[]};
+ const T=C.thn*12,x={cash:C.kas,ef:C.ef,iv:{su:0,rd:0,sh:0},debt:{keluarga:0,kartu:0,pinjol:0},veh:'',taxDebt:0,taxIncome:0,ccGrace:0,ccShoppingStress:0,points:0,ins:!!(P.ins&&S.insStart),stress:18+PER.base+LVST[C.lv],exAdj:0,gajiMul:1,sideMul:1,prop:0,eqM:0,com:[],last:{},kSince:null};
+ const nwx=()=>x.cash+x.ef+x.iv.su+x.iv.rd+x.iv.sh+x.prop-x.debt.keluarga-x.debt.kartu-x.debt.pinjol-x.taxDebt;
+ const H=[nwx()],st={intr:0,adm:0,gain:0,pinjol:0,borM:0,low:0,neg:0,acc:[],stressTotal:0,stressHigh:0,stressMax:0,covTotal:0,cov3:0,medSaved:0,medical:0,prem:0,income:0,invested:0,readyInvested:0,ivSum:0,ivExposure:{su:0,rd:0,sh:0},offers:0,goodOffers:0,sellLoss:0,avoidM:0};
  const exB=m=>C.exp*Math.pow(1.04,Math.floor(m/12)),exN=m=>Math.max(C.exp*0.5,exB(m)+x.exAdj);
- let bm=false,cm=0;
+ let bm=false,cm=0,pre=null,mNeed=0;
  const fund=r=>{for(const k of P.order){if(r<1)break;let t=0;
   if(k=='cash'){t=Math.min(x.cash,r);x.cash-=t}
   else if(k=='ef'){t=Math.min(x.ef,r);x.ef-=t}
-  else if(INV[k]){const f=1-INV[k].fee;t=Math.min(x.iv[k]*f,r);x.iv[k]-=t/f}
+  else if(INV[k]){const f=1-INV[k].fee;t=Math.min(x.iv[k]*f,r);const sold=t/f;x.iv[k]-=sold;st.sellLoss+=sold-t}
   else if(k=='keluarga'){t=Math.min(capFor(x,'keluarga'),r);if(t>0){if(x.debt.keluarga<1)x.kSince=cm;x.debt.keluarga+=t;bm=true}}
   else if(k=='kartu'){t=Math.min(capFor(x,'kartu'),r);x.debt.kartu+=t;if(t>0)bm=true}
   else{t=Math.min(capFor(x,'pinjol'),r);x.debt.pinjol+=t*1.1;st.adm+=t*0.1;if(t>0){st.pinjol++;bm=true}}
   r-=t}
-  if(r>=1){x.debt.pinjol+=r*1.1;st.adm+=r*0.1;st.pinjol++;bm=true}};
+  if(r>=1){x.debt.pinjol+=r*1.1;st.adm+=r*0.1;st.pinjol++;bm=true;x.stress=clamp(x.stress+10,0,100)}};
+ const fundM=r=>{if(pre===null)pre=x.cash+x.ef+0.97*(x.iv.su+x.iv.rd+x.iv.sh);mNeed+=r;fund(r)};
  for(let m=0;m<T;m++){
   x.com.forEach(c=>{if(c.active!==false&&c.until&&m>=c.until){x.exAdj-=c.d;c.active=false}});
-  const sc=S.scn[m],fi=Math.pow(1.05,Math.floor(m/12));bm=false;cm=m;
-  const income=sc.income||1,inc=C.gaji*fi*x.gajiMul*income,side=C.side*fi*x.sideMul*sc.u*income,prem=x.ins?Math.round(C.exp*0.03):0;
-  for(const k in RATE){const i=x.debt[k]*rateOf(k,m,x.kSince);x.debt[k]+=i;st.intr+=i}
+  const sc=S.scn[m],fi=Math.pow(1.05,Math.floor(m/12));bm=false;cm=m;pre=null;mNeed=0;
+  const income=incomeFactor(m),inc=C.gaji*fi*x.gajiMul*income,side=C.side*fi*x.sideMul*(GAME_MODE=='premium'&&C.emp=='pegawai'?1:sc.u)*income,hp=x.ins?Math.round(C.exp*0.03):0,vp=GAME_MODE=='premium'&&x.veh?Math.round(C.exp*(x.veh=='tlo'?0.005:0.012)):0,prem=hp+vp;
+  st.income+=inc+side;st.prem+=hp;
+  if(GAME_MODE=='premium')x.taxIncome+=inc+side;
+  for(const k in RATE){const base=k=='kartu'?Math.max(0,x.debt[k]-x.ccGrace):x.debt[k],i=base*rateOf(k,m,x.kSince);x.debt[k]+=i;st.intr+=i}x.ccGrace=0;
   let zi=0;for(const k in INV){const q=INV[k],g=x.iv[k]*clamp(sc.z[zi++]*q.sd*C.vm+q.mu,q.lo,q.hi);x.iv[k]+=g;st.gain+=g}
   x.ef*=1.002;if(x.eqM)x.prop=x.prop*1.004+x.eqM;
   x.cash+=inc+side-exN(m)-prem;
-  if(x.cash<0){const d=-x.cash;x.cash=0;fund(d)}
-  if(m>0&&(m%12==0||m%12==6)&&sc.ed)fund(C.exp*C.eduM*sc.edA);
-  if(sc.ev){const h=EVENTS[sc.evK][1];fund(C.sudden*sc.evA*(h&&x.ins?0.2:1))}
-  if(sc.biz)fund(exB(m)*sc.bizLoss);
+  const ex=exN(m),cov=x.ef/ex,net=inc+side-ex-prem;let target=18+PER.base+LVST[C.lv];
+  if(x.debt.pinjol>1)target+=24;if(x.debt.kartu>1)target+=12;if(x.debt.keluarga>1)target+=5;
+  if(cov<1)target+=18;else if(cov<3)target+=9;else if(cov>=6)target-=6;
+  if(x.cash<ex*0.3)target+=8;if(net<0)target+=10;if(nwx()<0)target+=8;
+  if(x.ins)target-=3;else if(PER.hr>=0.4)target+=6;
+  const comfort=x.com.filter(c=>c.id=='gaya'&&c.active!==false).length;if(comfort)target-=6*Math.min(comfort,2);
+  target+=x.com.filter(c=>c.active!==false&&c.stressUntil&&m<c.stressUntil).reduce((a,c)=>a+(c.stress||0),0);
+  target=clamp(target,0,100);x.stress=clamp(x.stress+(target-x.stress)*0.4,0,100);
+  const paymentStress=x.com.filter(c=>c.active!==false&&c.monthlyStressUntil&&m<c.monthlyStressUntil).reduce((a,c)=>a+(c.monthlyStress||0),0)+(x.debt.kartu>1?x.ccShoppingStress:0);x.stress=clamp(x.stress+paymentStress,0,100);
+  if(x.cash<0){const d=-x.cash;x.cash=0;fundM(d);x.stress=clamp(x.stress+8,0,100)}
+  if(m>0&&(m%12==0||m%12==6)&&sc.ed){fundM(C.exp*C.eduM*sc.edA);x.stress=clamp(x.stress+6,0,100)}
+  if(sc.ev){const h=EVENTS[sc.evK][1],amount=C.sudden*sc.evA;st.medical+=h?amount:0;fundM(amount*(h&&x.ins?0.2:1)*(GAME_MODE=='premium'&&EVENTS[sc.evK][0].includes('Motor')&&x.veh?1-(x.veh=='komprehensif'?0.8:0.5):1));if(h&&x.ins)st.medSaved+=amount*0.8;x.stress=clamp(x.stress+(h?(x.ins?6:10):7),0,100)}
+  if(sc.biz){fundM(exB(m)*sc.bizLoss);x.stress=clamp(x.stress+8,0,100)}
   const o=drawOffer(m,x.com,x.last);
-  if(o&&P.offer=='smart'&&o.up<=x.cash&&x.cash-o.up>=exN(m)*P.buf&&x.ef>=exN(m)*3&&offerValue(o,m)>0){
+  if(o)st.offers++;
+  const offerReady=o&&o.up<=x.cash&&x.cash-o.up>=exN(m)*P.buf&&x.ef>=exN(m)*3;
+  const offerWorthwhile=o&&offerValue(o,m)>0;
+  let accepted=false;
+  if(o&&P.offer=='smart'&&offerWorthwhile&&offerReady){
    x.cash-=o.up;x.exAdj+=dSum(o);if(o.id=='kpr'){x.prop+=o.up;x.eqM+=o.eq}if(o.sideMul)x.sideMul*=o.sideMul;
-   if(o.chance!=null&&sc.oL<o.chance)x.gajiMul*=o.gajiMul;x.com.push({id:o.id,grp:o.grp,d:dSum(o),until:o.duration?m+o.duration+1:null,active:true});st.acc.push({m,t:o.t});
+   if(o.creditAmount){x.debt.kartu+=o.creditAmount;x.ccGrace+=o.creditAmount;x.ccShoppingStress=Math.max(x.ccShoppingStress,o.creditStress||0);x.points+=o.points||0}
+   if(o.chance!=null&&sc.oL<o.chance)x.gajiMul*=o.gajiMul;x.com.push({id:o.id,grp:o.grp,d:dSum(o),stress:o.monthlyStress==null?(o.duration?o.stress||0:0):0,stressUntil:m+(o.duration||1),monthlyStress:o.monthlyStress||0,monthlyStressUntil:o.monthlyStress&&o.duration?m+o.duration+1:0,until:o.duration?m+o.duration+1:null,active:true});x.stress=clamp(x.stress+(o.stress||0),0,100);st.acc.push({m,t:o.t});st.goodOffers++;accepted=true;
   }
+  if(o&&!accepted&&(!offerReady||!offerWorthwhile))st.goodOffers++;
   const E=exN(m),buf=E*P.buf,free=()=>Math.max(0,x.cash-buf);
-  if(P.pay)for(const k of ['pinjol','kartu']){const p=Math.min(free(),x.debt[k]);x.cash-=p;x.debt[k]-=p}
+  if(P.pay)for(const k of ['pinjol','kartu']){const p=Math.min(free(),x.debt[k]);x.cash-=p;x.debt[k]-=p}if(x.debt.kartu<1)x.ccShoppingStress=0;
   if(P.efT){const p=Math.min(Math.max(0,E*P.efT-x.ef),free());x.cash-=p;x.ef+=p}
-  x.ins=P.ins;
+  x.ins=P.ins;x.veh=P.veh||'';
   if(P.pay&&x.ef>=E*Math.min(P.efT,3)){const p=Math.min(free(),x.debt.keluarga);x.cash-=p;x.debt.keluarga-=p;if(x.debt.keluarga<1)x.kSince=null}
-  if(P.alloc&&x.ef>=E*Math.min(P.efT,3)-1){const f=free();if(f>0)for(const k in P.alloc){const v=f*P.alloc[k];x.cash-=v;x.iv[k]+=v}}
-  if(bm)st.borM++;if(x.ef<E*3)st.low++;
-  const n=nwx();if(n<0)st.neg++;H.push(n);
+  if(P.alloc&&x.ef>=E*Math.min(P.efT,3)-1){const f=free();if(f>0){st.invested+=f;if(x.ef>=E*3)st.readyInvested+=f;for(const k in P.alloc){const v=f*P.alloc[k];x.cash-=v;x.iv[k]+=v}}}
+  if(P.offer=='smart'&&x.points>=100){const redeemed=Math.floor(x.points/100);x.points-=redeemed*100;x.stress=clamp(x.stress-redeemed*5,0,100)}
+  if(GAME_MODE=='premium'&&m%12==11){x.taxAccr=(x.taxAccr||0)+Math.round(Math.max(0,x.taxIncome-60000000)*0.03);x.taxIncome=0}
+  if(bm){st.borM++;if(pre!==null&&pre>=mNeed)st.avoidM++}if(x.ef<E*3)st.low++;
+  const n=nwx(),iv=x.iv.su+x.iv.rd+x.iv.sh;st.ivSum+=n>0?iv/n:0;for(const k in x.iv)st.ivExposure[k]+=x.iv[k];st.covTotal+=x.ef/exN(m);if(x.ef>=exN(m)*3)st.cov3++;st.stressTotal+=x.stress;if(x.stress>=75)st.stressHigh++;st.stressMax=Math.max(st.stressMax,x.stress);if(n<0)st.neg++;H.push(n);
  }
+ if(GAME_MODE=='premium'){x.taxDebt+=(x.taxAccr||0);x.taxAccr=0;if(x.taxDebt){const paid=Math.min(x.cash,x.taxDebt);x.cash-=paid;x.taxDebt-=paid}}
+ st.avgStress=st.stressTotal/T;st.avgCov=st.covTotal/T;st.endDebt=x.debt.keluarga+x.debt.kartu+x.debt.pinjol+x.taxDebt;st.endIV=x.iv.su+x.iv.rd+x.iv.sh;st.endNW=nwx();st.ivExposureTotal=st.ivExposure.su+st.ivExposure.rd+st.ivExposure.sh;st.maxIVShare=st.ivExposureTotal?Math.max(st.ivExposure.su,st.ivExposure.rd,st.ivExposure.sh)/st.ivExposureTotal:1;st.readyRatio=st.invested?st.readyInvested/st.invested:0;
  return {nw:nwx(),H,st,P};
 }
+function strategyScoreDetails(r,pas,bestAsset){
+ const T=C.thn*12,st=r.st,room=bestAsset.nw-pas.nw,dn=0.5*Math.max(room,C.exp),off=room<C.exp?0.5*(1-room/C.exp):0;
+ const asset=r.nw>=bestAsset.nw?100:clamp(off+(r.nw-pas.nw)/dn,0,1)*100;
+ const part=clamp((st.ivSum/T)/0.3,0,1),div=st.ivExposureTotal?(st.maxIVShare<=0.6?1:clamp(1-(st.maxIVShare-0.6)/0.4*0.5,0.5,1)):0;
+ const fee=st.invested?clamp(1-(st.sellLoss/st.invested)/0.02,0,1):1,investment=(0.4*part+0.25*st.readyRatio+0.2*div+0.15*fee)*100;
+ const cost=st.intr+st.adm,debt=(0.3*clamp(1-cost/Math.max(st.income,1)/0.03,0,1)+0.25*clamp(1-st.pinjol/3,0,1)+0.2*(st.borM?1-st.avoidM/st.borM:1)+0.15*clamp(1-st.neg/6,0,1)+0.1*clamp(1-st.endDebt/(3*C.exp),0,1))*100;
+ const prem=Math.round(C.exp*0.03),potential=st.medical*0.8-prem*T,actual=st.medSaved-st.prem;let insurance=70;
+ if(Math.abs(potential)>=prem*0.5){const lo=Math.min(potential,0),hi=Math.max(potential,0);insurance=clamp((actual-lo)/(hi-lo),0,1)*100}
+ const offers=st.offers?st.goodOffers/st.offers*100:null;
+ const emergency=(0.6*clamp(st.avgCov/6,0,1)+0.4*st.cov3/T)*100;
+ const stress=(0.7*clamp(1-(st.avgStress-20)/60,0,1)+0.3*(1-st.stressHigh/T))*100;
+ const items=[{n:'Nilai aset',w:30,s:asset},{n:'Investasi',w:15,s:investment},{n:'Utang',w:20,s:debt},{n:'Asuransi',w:10,s:insurance},{n:'Keputusan tawaran',w:15,s:offers},{n:'Dana darurat',w:10,s:emergency},{n:'Kesejahteraan (stres)',w:10,s:stress}],W=items.filter(i=>i.s!=null).reduce((a,i)=>a+i.w,0);
+ items.forEach(i=>i.c=i.s==null?null:i.s*i.w/W);
+ return {total:Math.round(items.reduce((a,i)=>a+(i.c||0),0)),items,W};
+}
+function strategyScore(r,pas,bestAsset){return strategyScoreDetails(r,pas,bestAsset).total}
 let _an=null;
 function analyze(){
  if(_an&&_an.sc===S.scn)return _an;
- let best=null;
- for(const order of [ORD1,ORD2])for(const efT of [3,6])for(const buf of [0.5,1])for(const ins of [false,true])for(const alloc of ALLOCS)for(const offer of ['never','smart']){
-  const r=simulate({order,efT,buf,ins,pay:true,alloc,offer});if(!best||r.nw>best.nw)best=r}
- const P=best.P,abl=[['Dana darurat',{efT:0}],['Investasi',{alloc:null}],['Asuransi kesehatan',{ins:false}],['Menerima tawaran yang layak',{offer:'never'}],['Melunasi utang lebih dulu',{pay:false}]]
+ const candidates=[];
+ for(const order of [ORD1,ORD2])for(const efT of [3,6])for(const buf of [0.5,1])for(const ins of [false,true])for(const alloc of ALLOCS)for(const offer of ['never','smart'])for(const veh of (GAME_MODE=='premium'?['','tlo','komprehensif']:[''])){
+  candidates.push(simulate({order,efT,buf,ins,pay:true,alloc,offer,veh}))}
+ const bestAsset=candidates.reduce((a,b)=>!a||b.nw>a.nw?b:a,null),pas=simulate(PAS);
+ candidates.forEach(r=>r.st.score=strategyScore(r,pas,bestAsset));
+ const best=candidates.reduce((a,b)=>!a||b.st.score>a.st.score?b:a,null);
+ const P=best.P,abl=[['Dana darurat',{efT:0}],['Investasi',{alloc:null}],['Asuransi kesehatan',{ins:false}],['Asuransi kendaraan',{veh:''}],['Menerima tawaran yang layak',{offer:'never'}],['Melunasi utang lebih dulu',{pay:false}]]
   .map(([n,o])=>[n,best.nw-simulate(Object.assign({},P,o)).nw]).filter(a=>a[1]>1).sort((a,b)=>b[1]-a[1]);
- return _an={sc:S.scn,best,disc:simulate(PD),pas:simulate(PAS),abl};
+ return _an={sc:S.scn,best,bestAsset,disc:simulate(PD),pas,abl};
 }
 function chart3(ser){
  const W=600,H=170,all=ser.flatMap(q=>q.d),mn=Math.min(...all,0),mx=Math.max(...all,1),sp=(mx-mn)||1,Y=v=>(H-8-(v-mn)/sp*(H-16)).toFixed(1),L=ser[0].d.length-1||1;
@@ -620,13 +698,13 @@ function chart3(ser){
  <div class="sm" style="display:flex;gap:14px;flex-wrap:wrap">${ser.map(q=>`<span><b style="color:${q.c}">&#9632;</b> ${q.n}</span>`).join('')}<span class="muted">Garis merah putus-putus: aset bersih nol</span></div>`;
 }
 function bestHTML(){
- const {best,disc,abl}=analyze(),R=S.rec,H=S.hist,end=nw(),sg=v=>(v>=0?'+':'')+fmt(v),cm=v=>String(v).replace('.',',');
- const mine={nw:end,min:Math.min(...H),neg:H.slice(1).filter(v=>v<0).length,intr:R.reduce((a,r)=>a+r.intr,0),pin:S.pinjolN,low:R.filter(r=>r.efv/r.exp<3).length,gain:R.reduce((a,r)=>a+r.gain,0),bor:R.filter(r=>r.bor).length};
+ const {best,bestAsset,disc,abl,pas}=analyze(),R=S.rec,H=S.hist,end=nw(),sg=v=>(v>=0?'+':'')+fmt(v),cm=v=>String(v).replace('.',','),myScore=computeScore().total;
+ const mine={nw:end,min:Math.min(...H),neg:H.slice(1).filter(v=>v<0).length,intr:R.reduce((a,r)=>a+r.intr,0),pin:S.pinjolN,low:R.filter(r=>r.efv/r.exp<3).length,gain:R.reduce((a,r)=>a+r.gain,0),bor:R.filter(r=>r.bor).length,stress:R.reduce((a,r)=>a+r.st,0)/Math.max(1,R.length)};
  const row=(t,a,b,c)=>`<tr><td>${t}</td><td>${a}</td><td>${b}</td><td>${c}</td></tr>`;
  const P=best.P,al=P.alloc?Object.keys(P.alloc).map(k=>Math.round(P.alloc[k]*100)+'% '+INV[k].n).join(', '):'tidak berinvestasi';
  const keys=[['Urutan prioritas','Lunasi pinjol dan kartu kredit lebih dulu, lalu isi dana darurat sampai '+P.efT+' bulan pengeluaran, baru berinvestasi.'],
   ['Kas cadangan','Sisakan kas sekitar '+cm(P.buf)+' bulan pengeluaran di tabungan.'],
-  ['Asuransi kesehatan',P.ins?'Aktifkan sejak bulan pertama.':'Tidak dipakai pada strategi ini.'],
+  ['Asuransi kesehatan',P.ins?'Aktifkan sejak bulan pertama.':'Tidak dipakai pada strategi ini.'],...(GAME_MODE=='premium'?[['Asuransi kendaraan',P.veh?'Paket '+(P.veh=='tlo'?'TLO':'komprehensif')+' mulai bulan kedua.':'Tidak dipakai pada strategi ini.']]:[]),
   ['Investasi','Sisa uang dibagi: '+al+'.'],
   ['Tawaran',P.offer=='smart'?(best.st.acc.length?'Hanya yang menguntungkan dan terjangkau: '+best.st.acc.map(a=>a.t+' (bulan '+(a.m+1)+')').join('; ')+'.':'Tidak ada tawaran yang layak diterima.'):'Tolak semua tawaran.'],
   ['Biaya mendadak','Ditutup dari kas, lalu dana darurat, lalu aset. '+(best.st.pinjol?'Pinjol terpaksa dipakai '+best.st.pinjol+' kali.':'Tanpa pinjol.')]];
@@ -651,15 +729,16 @@ function bestHTML(){
   negHTML=`<h3 style="margin-top:16px">Mengapa asetmu sempat minus</h3><p class="muted sm">Aset bersihmu negatif di ${mine.neg} bulan, dengan titik terendah ${fmt(mine.min)}.</p><ul class="ins">${why.map(t=>`<li>${t}</li>`).join('')}</ul>
   <h3 style="margin-top:14px">Keputusan yang seharusnya kamu ambil</h3><ul class="ins">${fix.length?fix.map(t=>`<li>${t}</li>`).join(''):'<li>Penyebab utamanya adalah beban awal yang berat di tingkatan ini. Tidak ada keputusan keliru yang menonjol.</li>'}</ul>`;
  }
- return `<h2 style="margin-top:22px">Keputusan terbaik</h2>
- <p class="muted sm">Permainanmu diputar ulang dengan kejadian yang persis sama (gaji, side job, biaya mendadak, pendidikan, hasil pasar, dan peluang tawaran), lalu dicoba ratusan kombinasi strategi. Strategi terbaik menghasilkan aset bersih <b>${fmt(best.nw)}</b>, ${gap>0?'lebih tinggi '+fmt(gap):'lebih rendah '+fmt(-gap)} dari hasilmu (${fmt(end)}).</p>
- ${chart3([{n:'Permainanmu',c:'var(--ink)',d:H},{n:'Strategi disiplin',c:'var(--good)',d:disc.H},{n:'Strategi terbaik',c:'var(--acc)',d:best.H}])}
- <div class="scroll"><table><tr><th></th><th>Kamu</th><th>Disiplin</th><th>Terbaik</th></tr>
+ return `<h2 style="margin-top:22px">Strategi dengan skor tertinggi</h2>
+ <p class="muted sm">Permainan diputar ulang dengan kejadian yang sama dan ratusan kombinasi dinilai dari gabungan aset, investasi, utang, asuransi, keputusan tawaran, dana darurat, dan stres. Strategi skor tertinggi berakhir dengan aset bersih <b>${fmt(best.nw)}</b> (skor simulasi ${best.st.score}), ${gap>0?'lebih tinggi '+fmt(gap):'lebih rendah '+fmt(-gap)} dari hasilmu (${fmt(end)}). Strategi dengan aset akhir tertinggi menghasilkan ${fmt(bestAsset.nw)}.</p>
+ ${chart3([{n:'Permainanmu',c:'var(--ink)',d:H},{n:'Strategi disiplin',c:'var(--good)',d:disc.H},{n:'Skor gabungan tertinggi',c:'var(--acc)',d:best.H}])}
+ <div class="scroll"><table><tr><th></th><th>Kamu</th><th>Disiplin</th><th>Skor tertinggi</th></tr>
+ ${row('Skor gabungan',myScore, strategyScore(disc,pas,bestAsset),best.st.score)}
  ${row('Aset bersih akhir',fmt(mine.nw),fmt(disc.nw),fmt(best.nw))}${row('Aset bersih terendah',fmt(mine.min),fmt(Math.min(...disc.H)),fmt(Math.min(...best.H)))}
- ${row('Bulan aset negatif',mine.neg,disc.st.neg,best.st.neg)}${row('Bunga utang dibayar',fmt(mine.intr),fmt(disc.st.intr),fmt(best.st.intr))}
+ ${row('Bulan aset negatif',mine.neg,disc.st.neg,best.st.neg)}${row('Stres rata-rata',Math.round(mine.stress),Math.round(disc.st.avgStress),Math.round(best.st.avgStress))}${row('Bunga utang dibayar',fmt(mine.intr),fmt(disc.st.intr),fmt(best.st.intr))}
  ${row('Pemakaian pinjol',mine.pin+' kali',disc.st.pinjol+' kali',best.st.pinjol+' kali')}${row('Bulan berutang',mine.bor,disc.st.borM,best.st.borM)}
  ${row('Bulan dana darurat di bawah 3 bulan',mine.low,disc.st.low,best.st.low)}${row('Hasil investasi',sg(mine.gain),sg(disc.st.gain),sg(best.st.gain))}</table></div>
- <p class="sm muted" style="margin-top:8px"><b>Disiplin</b> adalah aturan tetap tanpa menebak pasar: dana darurat 6 bulan, asuransi, investasi tersebar, tawaran selektif. <b>Terbaik</b> memilih komposisi investasi dengan melihat hasil pasar setelah kejadian, jadi itu batas atas yang tidak bisa dipastikan sebelumnya. Jenis tawaran yang muncul bisa sedikit berbeda karena bergantung pada keputusan sebelumnya.</p>
+ <p class="sm muted" style="margin-top:8px"><b>Disiplin</b> adalah aturan tetap tanpa menebak pasar: dana darurat 6 bulan, asuransi, investasi tersebar, tawaran selektif. Strategi skor tertinggi menimbang tujuh aspek permainan; pemilihan investasinya tetap memakai hasil pasar yang sudah diketahui dalam simulasi, jadi tidak menjamin hasil serupa di permainan nyata.</p>
  <h3 style="margin-top:14px">Keputusan kunci strategi terbaik</h3><ul class="ins">${keys.map(([a,b])=>`<li><b>${a}.</b> ${b}</li>`).join('')}</ul>
  ${abl.length?`<h3 style="margin-top:14px">Seberapa besar tiap keputusan berpengaruh</h3><p class="muted sm">Tambahan aset bersih akhir dibanding bila keputusan itu dihilangkan dari strategi terbaik.</p><ul class="ledger">${abl.map(([n,v])=>`<li><span>${n}</span><span class="pos">+${fmt(v)}</span></li>`).join('')}</ul>`:''}
  ${negHTML}`;
@@ -698,11 +777,11 @@ function chart(){
 }
 const gradeRel=s=>s>=85?'A':s>=70?'B':s>=55?'C':s>=40?'D':'E';
 function computeScore(){
- const {best,pas}=analyze(),R=S.rec,n=R.length,mine=nw(),sum=f=>R.reduce((a,r)=>a+f(r),0),inc=sum(r=>r.inc+r.side),I=[];
+ const {best,bestAsset,pas}=analyze(),R=S.rec,n=R.length,mine=nw(),sum=f=>R.reduce((a,r)=>a+f(r),0),inc=sum(r=>r.inc+r.side),I=[];
  const needOf=r=>(r.ev?r.ev[1]:0)+(r.biz?r.biz[1]:0)+(r.edu?r.edu[1]:0)+(r.deficit||0),pc=v=>Math.round(v*100);
  // 1. aset
- const room=best.nw-pas.nw,dn=0.5*Math.max(room,C.exp),off=room<C.exp?0.5*(1-room/C.exp):0,target=pas.nw+dn*(1-off);
- I.push({n:'Nilai aset',w:30,s:mine>=best.nw?100:clamp(off+(mine-pas.nw)/dn,0,1)*100,t:`Aset bersihmu ${fmt(mine)}. Hanya menyimpan kas: ${fmt(pas.nw)}. Strategi terbaik: ${fmt(best.nw)}. Skor penuh dicapai jika asetmu mencapai ${fmt(target)}, yaitu separuh jalan menuju strategi terbaik, karena strategi terbaik memanfaatkan hasil pasar yang tidak bisa ditebak.`});
+ const room=bestAsset.nw-pas.nw,dn=0.5*Math.max(room,C.exp),off=room<C.exp?0.5*(1-room/C.exp):0,target=pas.nw+dn*(1-off);
+ I.push({n:'Nilai aset',w:30,s:mine>=bestAsset.nw?100:clamp(off+(mine-pas.nw)/dn,0,1)*100,t:`Aset bersihmu ${fmt(mine)}. Hanya menyimpan kas: ${fmt(pas.nw)}. Strategi dengan skor gabungan tertinggi menghasilkan ${fmt(best.nw)}; batas aset tertinggi dalam simulasi ${fmt(bestAsset.nw)}. Skor penuh untuk aspek aset dicapai jika asetmu mencapai ${fmt(target)}.`});
  // 2. investasi
  const tb=S.buys.reduce((a,b)=>a+b.v,0),ready=tb?S.buys.filter(b=>b.ok).reduce((a,b)=>a+b.v,0)/tb:0;
  const ratio=sum(r=>r.nw>0?r.invv/r.nw:0)/n,part=clamp(ratio/0.3,0,1);
@@ -714,7 +793,7 @@ function computeScore(){
  const negM=S.hist.slice(1).filter(v=>v<0).length,endD=debtTotal();
  I.push({n:'Utang',w:20,s:(0.3*clamp(1-cost/inc/0.03,0,1)+0.25*clamp(1-S.pinjolN/3,0,1)+0.2*(bm.length?1-av/bm.length:1)+0.15*clamp(1-negM/6,0,1)+0.1*clamp(1-endD/(3*C.exp),0,1))*100,t:`Biaya utang total (bunga, tanda terima kasih, admin) ${fmt(cost)}. Pinjol ${S.pinjolN} kali. ${av} dari ${bm.length} bulan berutang sebenarnya bisa dihindari. Aset negatif ${negM} bulan. Sisa utang akhir ${fmt(endD)}.`});
  // 4. asuransi
- const prem=Math.round(C.exp*0.03),pot=sum(r=>(r.med||0)*0.8),A=pot-prem*n,saved=sum(r=>r.save||0),paid=sum(r=>r.prem||0),act=saved-paid;
+ const prem=Math.round(C.exp*0.03),pot=sum(r=>(r.med||0)*0.8),A=pot-prem*n,saved=sum(r=>r.save||0),paid=sum(r=>r.premHealth||0),act=saved-paid;
  let sS=70;if(Math.abs(A)>=prem*0.5){const lo=Math.min(A,0),hi=Math.max(A,0);sS=clamp((act-lo)/(hi-lo),0,1)*100}
  I.push({n:'Asuransi',w:10,s:sS,t:`Klaim yang dihemat ${fmt(saved)}, premi dibayar ${fmt(paid)}. ${Math.abs(A)<prem*0.5?'Kejadian medis nyaris tidak ada, jadi asuransi netral.':A>0?'Pada kejadian ini, berasuransi sepanjang permainan seharusnya menguntungkan.':'Pada kejadian ini, tanpa asuransi justru lebih hemat.'}`});
  // 5. tawaran
@@ -730,16 +809,26 @@ function computeScore(){
  return {total:Math.round(I.reduce((a,i)=>a+(i.c||0),0)),items:I,W};
 }
 function scoreHTML(SC){
- return `<h3 style="margin-top:16px">Rincian nilai</h3><div class="scroll"><table><tr><th>Kriteria</th><th>Bobot</th><th>Skor</th><th>Sumbangan</th></tr>${SC.items.map(i=>`<tr><td>${i.n}</td><td>${i.s==null?'-':Math.round(i.w/SC.W*100)+'%'}</td><td>${i.s==null?'-':Math.round(i.s)}</td><td><b>${i.c==null?'-':i.c.toFixed(1).replace('.',',')}</b></td></tr>`).join('')}</table></div>
+ const {best,bestAsset,pas}=analyze(),BS=strategyScoreDetails(best,pas,bestAsset),bestRows=new Map(BS.items.map(i=>[i.n,i]));
+ return `<h3 style="margin-top:16px">Rincian nilai dan kemungkinan terbaik</h3><p class="sm muted" style="margin-top:6px">Skor kemungkinan terbaik: <b>${BS.total}/100</b>. Tabel membandingkan skor dan bobot efektif tiap kriteria, termasuk stres.</p><div class="scroll"><table><tr><th>Kriteria</th><th>Bobot kamu</th><th>Skor kamu</th><th>Sumbangan kamu</th><th>Bobot kemungkinan terbaik</th><th>Skor kemungkinan terbaik</th><th>Sumbangan terbaik</th></tr>${SC.items.map(i=>{const b=bestRows.get(i.n);return `<tr><td>${i.n}</td><td>${Math.round(i.w/SC.W*100)}%</td><td>${i.s==null?'-':Math.round(i.s)}</td><td><b>${i.c==null?'-':i.c.toFixed(1).replace('.',',')}</b></td><td>${!b||b.s==null?'-':Math.round(b.w/BS.W*100)+'%'}</td><td>${!b||b.s==null?'-':Math.round(b.s)}</td><td><b>${!b||b.c==null?'-':b.c.toFixed(1).replace('.',',')}</b></td></tr>`}).join('')}</table></div>
  <ul class="ins sm">${SC.items.map(i=>`<li><b>${i.n}.</b> ${i.t}</li>`).join('')}</ul>`;
 }
 function finalScore(){
- const {best,pas}=analyze(),mine=nw(),den=Math.max(best.nw-pas.nw,C.exp),r=(mine-pas.nw)/den;
- return {score:mine>=best.nw?100:Math.round(clamp(r,0,1)*100),pct:Math.round(Math.max(0,r)*100),best:best.nw,pas:pas.nw};
+ const {bestAsset,pas}=analyze(),mine=nw(),den=Math.max(bestAsset.nw-pas.nw,C.exp),r=(mine-pas.nw)/den;
+ return {score:mine>=bestAsset.nw?100:Math.round(clamp(r,0,1)*100),pct:Math.round(Math.max(0,r)*100),best:bestAsset.nw,pas:pas.nw};
 }
 const gradeOf=s=>s>=85?'A':s>=70?'B':s>=55?'C':s>=40?'D':'E';
 function yearReport(){
  const y=S.m/12,n=nw(),delta=n-S.yNW,cov=S.ef/expNow(),d=debtTotal();
+ const yr=S.rec.filter(r=>Math.floor(r.m/12)==y-1),sum=f=>yr.reduce((a,r)=>a+(f(r)||0),0),unexpected=sum(r=>(r.ev?r.ev[1]:0)+(r.biz?r.biz[1]:0)+(r.edu?r.edu[1]:0)+(r.deficit||0));
+ const overview=[
+  ['Total pemasukan',fmt(sum(r=>r.inc+r.side)),'pos'],['Pengeluaran rutin',fmt(sum(r=>r.exp)),'neg'],
+  ['Premi asuransi kesehatan',fmt(sum(r=>r.premHealth)),'neg'],['Premi asuransi kendaraan',fmt(sum(r=>r.premVehicle)),'neg'],
+  ['Biaya mendadak, pendidikan, dan pajak',fmt(unexpected),'neg'],['Bunga utang',fmt(sum(r=>r.intr)),'neg'],
+  ['Hasil investasi',fmt(sum(r=>r.gain)),sum(r=>r.gain)>=0?'pos':'neg'],['Perubahan aset bersih',`${delta>=0?'+':''}${fmt(delta)}`,delta>=0?'pos':'neg'],
+  ['Poin kartu kredit didapat / ditukar',`${sum(r=>r.pointsEarned).toLocaleString('id-ID')} / ${sum(r=>r.pointsSpent).toLocaleString('id-ID')} poin`,'']
+ ];
+ const overviewHTML=`<h3 style="margin-top:16px">Ringkasan keuangan tahun ${y}</h3><p class="sm muted" style="margin-top:6px">Rangkuman pemasukan, biaya utama, dan reward sepanjang tahun.</p><ul class="ledger">${overview.map(([a,b,c])=>`<li><span>${a}</span><span class="${c}">${b}</span></li>`).join('')}</ul>`;
  const income=(C.gaji+C.side)*Math.pow(1.05,y-1)*12;
  const g=clamp(25+delta/income*100,0,50),e=clamp(cov/6,0,1)*30,u=d<=0?20:clamp(20-d/Math.max(1,n+d)*40,0,20);
  const score=Math.round(g+e+u),gr=gradeOf(score);
@@ -752,6 +841,7 @@ function yearReport(){
  <li><span>Perubahan dari awal tahun</span><span class="${delta>=0?'pos':'neg'}">${delta>=0?'+':''}${fmt(delta)}</span></li>
  <li><span>Dana darurat</span><span>${cov.toFixed(1)} bulan pengeluaran</span></li>
  <li><span>Total utang</span><span class="${d?'neg':'pos'}">${fmt(d)}</span></li><li><span>Tingkat stres akhir tahun</span><span>${stLv(Math.round(S.stress))[0]} (${Math.round(S.stress)} dari 100)</span></li></ul>
+ ${overviewHTML}
  ${chart()}
  <p class="sm muted">Nilai sementara = pertumbuhan aset (50) + kecukupan dana darurat (30) + beban utang (20). Nilai akhir ditentukan di akhir permainan lewat tujuh kriteria berbobot.</p>
  <div class="row"><button class="btn pri" id="cont">${last?'Lihat hasil akhir':'Lanjut ke tahun '+(y+1)}</button></div></div>`;
@@ -760,6 +850,8 @@ function yearReport(){
 
 /* ---------- HASIL AKHIR ---------- */
 function final(){
+ if(GAME_MODE=='premium'&&!S.taxSettled){const taxes=taxByYear(S.rec),incomeTax=taxes.reduce((a,r)=>a+r.tax,0),totalTax=(S.taxDebt||0)+incomeTax;$('stage').innerHTML=`<div class="card"><h2>Pajak akhir permainan</h2><p class="muted" style="margin-top:10px">Pajak tahunan dihitung dari (total pemasukan setahun − Rp 60.000.000) × 3%, jika hasilnya positif.</p><ul class="ledger">${taxes.map(r=>`<li><span>Tahun ${r.y}: pemasukan ${fmt(r.income)}</span><span>Pajak ${fmt(r.tax)}</span></li>`).join('')}</ul><p style="margin-top:12px">Utang pajak dari tagihan sebelumnya ${fmt(S.taxDebt||0)}. Pajak penghasilan akhir ${fmt(incomeTax)}. <b>Total kewajiban pajak ${fmt(totalTax)}.</b></p><div class="row"><button class="btn pri" id="payFinalTax">Bayar dari kas</button><button class="btn" id="deferFinalTax">Catat sebagai kewajiban</button></div><p class="sm muted" style="margin-top:8px">Kas saat ini ${fmt(S.cash)}. Sisa yang tidak tertutup akan masuk ke utang pajak.</p></div>`;$('payFinalTax').onclick=()=>{const paid=Math.min(S.cash,totalTax);S.cash-=paid;S.taxDebt=totalTax-paid;S.taxSettled=true;final()};$('deferFinalTax').onclick=()=>{S.taxDebt=totalTax;S.taxSettled=true;final()};return}
+ setModeLock(false);
  const SC=computeScore(),avg=SC.total,gr=gradeRel(avg),n=nw(),d=debtTotal(),risk=(S.hist.slice(1).some(v=>v<0)||S.pinjolN>0)&&avg>=70;
  const title={A:'Ahli Napas Panjang',B:'Pengelola Handal',C:'Penyintas',D:'Hampir Tenggelam',E:(d>0||n<0)?'Jerat Utang':'Uang Belum Bekerja'}[gr];
  const tips=[];
@@ -777,10 +869,11 @@ function final(){
  if(!tips.length)tips.push('Keputusanmu konsisten dan disiplin. Pertahankan kebiasaan ini.');
  $('stage').innerHTML=`<div class="card"><h2>Hasil akhir: ${title}</h2>
  <div class="row" style="align-items:center"><div class="grade">${gr}</div><div><b>Nilai ${avg} dari 100 (Level ${LEVELS[C.lv].n})</b><p class="muted">Aset bersih akhirmu ${fmt(n)} (awal ${fmt(S.hist[0])}). Nilai adalah gabungan tujuh kriteria berbobot.${risk?' Catatan: kamu sempat minus atau memakai pinjol. Hasilnya bagus, tapi itu risiko yang sebaiknya dihindari.':''}</p></div></div>
+ <section class="msg" style="margin-top:14px"><b>Rekap utang akhir permainan</b><ul class="ledger"><li><span>Utang selain pajak</span><span>${fmt(Math.max(0,d-(S.taxDebt||0)))}</span></li><li><span>Utang pajak</span><span>${fmt(S.taxDebt||0)}</span></li><li><b>Total utang</b><b>${fmt(d)}</b></li></ul></section>
  ${scoreHTML(SC)}
  <div class="scroll"><table><tr><th>Tahun</th><th>Aset bersih</th><th>Utang</th><th>Dana darurat</th><th>Nilai sementara</th></tr>
  ${S.scores.map(s=>`<tr><td>${s.y}</td><td>${fmt(s.n)}</td><td>${fmt(s.d)}</td><td>${s.cov.toFixed(1)} bln</td><td><b>${s.gr}</b> (${s.score})</td></tr>`).join('')}</table></div>
- ${chart()}<h3 style="margin-top:14px">Catatan untukmu</h3><ul class="ins">${tips.map(t=>`<li>${t}</li>`).join('')}</ul>
+ ${GAME_MODE=='premium'?`<p class="msg" style="margin-top:12px">Sisa utang pajak: ${fmt(S.taxDebt)} ${S.taxDebt?'masih menjadi kewajiban':'sudah dibayar penuh'}.</p>`:''}${chart()}<h3 style="margin-top:14px">Catatan untukmu</h3><ul class="ins">${tips.map(t=>`<li>${t}</li>`).join('')}</ul>
  ${bestHTML()}${insightHTML()}<div class="row"><button class="btn pri" id="again">Main lagi di tingkatan yang sama</button><button class="btn" id="chg">Ganti tingkatan</button></div></div>`;
  $('again').onclick=initState;
  $('chg').onclick=()=>{LVSEL=C.lv;DURSEL=C.thn;setup()};

@@ -138,7 +138,7 @@ summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px}
 .character-card .scene-copy{position:relative;z-index:1;margin:-3px 0 0;padding:12px;border-radius:14px;background:rgba(255,255,255,.93);box-shadow:0 4px 12px #14233a18}
 .character-card .scene-copy .eyebrow{color:#465a72}.character-card .scene-copy h2{font-size:19px}.character-card .scene-copy p{font-size:13px}.character-card .scene-context{margin-top:7px}
 .character-card{min-height:0}
-#character #dash .finance-strip{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:9px 0 0;overflow:visible}
+#character #dash .finance-strip{display:grid;grid-template-columns:1fr;gap:6px;margin:9px 0 0;overflow:visible}
 #character #dash .finance-item{min-width:0;padding:7px;border-radius:9px}
 #character #dash .finance-item span{font-size:10px;line-height:1.25}
 #character #dash .finance-item b{font-size:12px}
@@ -910,6 +910,7 @@ function yearReport(){
  const g=clamp(25+delta/income*100,0,50),e=clamp(cov/6,0,1)*30,u=d<=0?20:clamp(20-d/Math.max(1,n+d)*40,0,20);
  const score=Math.round(g+e+u),gr=gradeOf(score);
  S.scores.push({y,score,gr,n,delta,cov,d});dash();
+ $('storyboard').innerHTML='';
  const msg={A:'Luar biasa. Aset tumbuh, dana darurat kuat, utang terkendali.',B:'Bagus. Fondasimu sehat, tinggal dirapikan sedikit lagi.',C:'Cukup bertahan, tapi masih rawan kalau ada guncangan besar.',D:'Rapuh. Satu kejadian besar bisa membuatmu terjerat utang.',E:'Kritis. Prioritaskan melunasi utang dan membangun dana darurat.'}[gr];
  const last=y>=C.thn;
  $('stage').innerHTML=`<div class="card"><h2>Rapor tahun ${y}</h2>
